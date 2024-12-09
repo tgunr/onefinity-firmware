@@ -7,11 +7,14 @@ import subprocess
 import socket
 from tornado.web import HTTPError
 from tornado import gen
+from tornado.escape import url_unescape
 import re
 import bbctrl
 from urllib.request import urlopen
 import iw_parse
-
+import io
+import zipfile
+import shutil
 
 def call_get_output(cmd):
     p = subprocess.Popen(cmd, stdout = subprocess.PIPE)
@@ -252,14 +255,104 @@ class ConfigLoadHandler(bbctrl.APIHandler):
 
 class ConfigDownloadHandler(bbctrl.APIHandler):
     def set_default_headers(self):
-        fmt = socket.gethostname() + '-%Y%m%d.json'
+        fmt = socket.gethostname() + '-%Y%m%d.zip'
         filename = datetime.date.today().strftime(fmt)
         self.set_header('Content-Type', 'application/octet-stream')
         self.set_header('Content-Disposition',
                         'attachment; filename="%s"' % filename)
 
-    def get(self):
-        self.write_json(self.get_ctrl().config.load(), pretty = True)
+    def get(self,filename):
+      buffer = io.BytesIO()
+      zip_file = zipfile.ZipFile(buffer, mode="w")
+      config_path = self.get_path('config.json')
+      try:
+          if os.path.exists(config_path):
+              zip_file.write(config_path,'config.json')
+          else: 
+              json_bytes = json.dumps({'version': self.version}).encode("utf-8")
+              zip_file.writestr("config.json",json_bytes)
+
+      except Exception: self.log.exception('Internal error: Failed to download config')
+      if not filename or filename == '/':
+          zip_file.close()
+          buffer.seek(0)
+          self.write(buffer.getvalue())
+          self.finish()
+
+      filename = filename[1:]
+      files = filename.split(',')
+
+      for filename in files:
+          filename = os.path.basename(url_unescape(filename))
+          filepath = self.get_upload(filename)
+          zip_file.write(filepath, filename)
+        
+      zip_file.close()
+      buffer.seek(0)
+
+      self.write(buffer.getvalue())
+      self.finish()
+
+class ConfigRestoreHandler(bbctrl.APIHandler):
+    def put(self):
+        if 'zipfile' not in self.request.files:
+            raise HTTPError(400, 'No file uploaded')
+        
+        zip_file = self.request.files['zipfile'][0]
+        temp_dir = './config-temp'
+
+        if not os.path.exists(temp_dir):
+            os.mkdir(temp_dir)
+
+        files_path = os.path.join(temp_dir, zip_file['filename'])
+
+        with open(files_path, 'wb') as f:
+            f.write(zip_file['body'])
+
+        if not os.path.exists(self.get_upload()):
+            os.mkdir(self.get_upload())
+
+
+        with zipfile.ZipFile(files_path, 'r') as zip_ref:
+            zip_ref.extractall(temp_dir+'/extracted')
+
+        extension = (".nc", ".ngc", ".gcode", ".gc")
+
+        for root, dirs, files in os.walk(temp_dir+'/extracted'):
+            for file in files:
+                file_path = os.path.join(root, file)
+
+                #Updating the config.json
+                if file =="config.json":
+                    with open(file_path, 'r') as json_file:
+                        json_data = json.load(json_file)
+
+                        if "macros" in json_data and isinstance(json_data['macros'], list):
+                            json_data["macros_list"] = [
+                                {"file_name": item["file_name"]}
+                                for item in json_data["macros"]
+                                if isinstance(item, dict) and "file_name" in item and item["file_name"] != "default"
+                            ]
+                        else:
+                            json_data["macros_list"] = []
+
+                        keys_to_remove = ['non_macros_list','gcode_list']
+                        for key in keys_to_remove:
+                            if key in json_data:
+                                del json_data[key]
+                        self.get_ctrl().config.save(json_data)
+
+                #moving the gcodes from temp to uploads
+                elif file.endswith(extension):
+                    filename = self.get_upload(file).encode('utf8')
+                    try:
+                        os.link(file_path,filename)
+                    except FileExistsError as e:
+                        print('File already exists')
+                    self.get_ctrl().preplanner.invalidate(file)
+                    self.get_ctrl().state.add_file(file)
+
+        shutil.rmtree(temp_dir)
 
 
 class ConfigSaveHandler(bbctrl.APIHandler):
@@ -608,7 +701,6 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
         self.set_header('Cache-Control',
                         'no-store, no-cache, must-revalidate, max-age=0')
 
-
 class Web(tornado.web.Application):
     def __init__(self, args, ioloop):
         self.args = args
@@ -640,9 +732,10 @@ class Web(tornado.web.Application):
             (r'/api/remote/username', UsernameHandler),
             (r'/api/remote/password', PasswordHandler),
             (r'/api/config/load', ConfigLoadHandler),
-            (r'/api/config/download', ConfigDownloadHandler),
+            (r'/api/config/download(/.*)?', ConfigDownloadHandler),
             (r'/api/config/save', ConfigSaveHandler),
             (r'/api/config/reset', ConfigResetHandler),
+            (r'/api/config/restore',ConfigRestoreHandler),
             (r'/api/firmware/update', FirmwareUpdateHandler),
             (r'/api/upgrade', UpgradeHandler),
             (r'/api/file(/[^/]+)?', bbctrl.FileHandler),

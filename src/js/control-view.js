@@ -53,6 +53,11 @@ module.exports = {
       GCodeNotFound: false,
       filesUploaded: 0,
       totalFiles: 0,
+      files_sortby: "By Upload Date",
+      selected_items_to_delete: [],
+      search_query: "",
+      filtered_files: [],
+      selected_folder_index: null,
     };
   },
 
@@ -216,14 +221,20 @@ module.exports = {
         return [];
       }
       const folder = this.state.gcode_list.find(item => item.name == this.state.folder);
-      if (folder) {
-        return folder.files
-          .filter(item => this.state.files.includes(item.file_name))
-          .map(item => item.file_name)
-          .sort();
-      } else {
+      if (!folder) {
         return [];
       }
+      const files = folder.files.filter(item => this.state.files.includes(item.file_name)).map(item => item.file_name);
+      if (this.files_sortby == "A-Z") {
+        return files.sort();
+      } else if (this.files_sortby == "Z-A") {
+        return files.sort().reverse();
+      } else {
+        return files;
+      }
+    },
+    gcode_filtered_files: function () {
+      return this.filtered_files.filter(file => file.toLowerCase().includes(this.search_query.toLowerCase()));
     },
     gcode_folders: function () {
       return this.state.gcode_list
@@ -284,6 +295,12 @@ module.exports = {
         alert("Restore failed");
       }
     },
+
+    populateFiles(index) {
+      this.selected_folder_index = index;
+      this.filtered_files = this.state.gcode_list[index].files.map(item => item.file_name);
+    },
+
     getJogIncrStyle(value) {
       const weight = `font-weight:${this.jog_incr === value ? "bold" : "normal"}`;
       const color = this.jog_incr === value ? "color:#0078e7" : "";
@@ -308,6 +325,16 @@ module.exports = {
 
     send: function (msg) {
       this.$dispatch("send", msg);
+    },
+
+    toggle_sorting: function () {
+      if (this.files_sortby === "By Upload Date") {
+        this.files_sortby = "A-Z";
+      } else if (this.files_sortby === "A-Z") {
+        this.files_sortby = "Z-A";
+      } else if (this.files_sortby === "Z-A") {
+        this.files_sortby = "By Upload Date";
+      }
     },
 
     load: function () {
@@ -611,16 +638,34 @@ module.exports = {
 
       this.update_config();
 
-      this.config.non_macros_list = this.config.non_macros_list.filter(item => item.file_name != this.state.selected);
-      const file_to_delete = this.config.gcode_list.find(
-        item => item.name == this.state.folder && item.type == "folder",
+      this.config.non_macros_list = this.config.non_macros_list.filter(
+        item => !this.selected_items_to_delete.includes(item.file_name),
       );
-      file_to_delete.files = file_to_delete.files.filter(item => item.file_name != this.state.selected);
+      const folder_to_update = this.config.gcode_list.find(
+        item => item.name == this.config.gcode_list[this.selected_folder_index].name && item.type == "folder",
+      );
+      folder_to_update.files = folder_to_update.files.filter(
+        item => !this.selected_items_to_delete.includes(item.file_name),
+      );
 
-      if (!this.state.macros_list.find(item => item.file_name == this.state.selected)) {
-        api.delete(`file/${this.state.selected}`);
-      }
+      const exception_list = this.state.macros_list.map(item => item.file_name);
+      let files_to_delete = this.selected_items_to_delete.filter(item => !exception_list.includes(item));
+
+      await api.delete(`file/DINCAIQABiDARixAxiABDIHCAMQABiABDIHCAQQABiABDIH${files_to_delete.toString()}`);
+
       this.save_config(this.config);
+      this.filtered_files = [];
+      this.search_query = "";
+      this.selected_folder_index = null;
+      this.selected_items_to_delete = [];
+      this.deleteGCode = false;
+    },
+
+    cancel_delete: function () {
+      this.filtered_files = [];
+      this.search_query = "";
+      this.selected_folder_index = null;
+      this.selected_items_to_delete = [];
       this.deleteGCode = false;
     },
 
@@ -644,6 +689,8 @@ module.exports = {
 
       this.save_config(this.config);
       this.state.folder = "default";
+      this.state.selected = "";
+      this.selected_items_to_delete = [];
       this.deleteGCode = false;
     },
 
@@ -678,7 +725,9 @@ module.exports = {
         return;
       }
       const macrosList = this.state.macros_list.map(item => item.file_name);
-      var files_to_delete = selected_folder.files.map(item => item.file_name).filter(item => macrosList.includes(item));
+      var files_to_delete = selected_folder.files
+        .map(item => item.file_name)
+        .filter(item => !macrosList.includes(item));
       if (selected_folder.name != "default") {
         this.config.gcode_list = this.config.gcode_list.filter(item => item.name != this.state.folder);
       } else {

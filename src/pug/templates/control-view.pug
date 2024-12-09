@@ -270,10 +270,13 @@ script#control-view-template(type="text/x-template")
             title="{{is_running ? 'Pause' : 'Start'}} program.",
             @click="start_pause", :disabled="!state.selected",
             style="height:100px;width:100px;font-weight:normal")
-            .fa(:class="is_running ? 'fa-pause' : 'fa-play'" style="font-size:30px")
+            if is_running
+              img(src="images/pause_gcode.png" style="height: 55px;")
+            else
+              img(src="images/play_gcode.png" style="height: 55px;")
 
           button.pure-button(title="Stop program.", @click="stop", style="height:100px;width:100px;font-weight:normal")
-            img(src="images/stop.png" style="height: 25px;")
+            img(src="images/stop.png" style="height: 55px;")
 
           button.pure-button(title="Pause program at next optional stop (M1).",
             @click="optional_pause", v-if="false", style="height:100px;width:100px;font-weight:normal")
@@ -295,7 +298,7 @@ script#control-view-template(type="text/x-template")
           
           button.pure-button(title="Upload a new GCode folder.", @click="open_folder",
             :disabled="!is_ready",style="height:100px;width:100px;font-weight:normal")
-            img(src="images/upload_folder.png" style="height: 40px;")
+            img(src="images/upload_folder.png" style="height: 65px;")
 
           form.gcode-folder-input.file-upload
             input#folderInput(type="file", @change="upload_folder", :disabled="!is_ready",
@@ -303,7 +306,7 @@ script#control-view-template(type="text/x-template")
           
           button.pure-button(title="Upload a new GCode program.", @click="open_file",
             :disabled="!is_ready",style="height:100px;width:100px;font-weight:normal")
-            img(src="images/upload_gcode.png" style="height: 30px;")
+            img(src="images/upload_gcode.png" style="height: 65px;")
 
           form.gcode-file-input.file-upload
             input(type="file", @change="upload_file", :disabled="!is_ready",
@@ -313,22 +316,33 @@ script#control-view-template(type="text/x-template")
               :href="'/api/file/' + state.selected",
               title="Download the selected GCode program.")
             button.pure-button(:disabled="!state.selected", style="height:100px;width:100px")
-              img(src="images/download_gcode.png" style="height: 30px;")
+              img(src="images/download_gcode.png" style="height: 65px;")
 
           button.pure-button(title="Delete current GCode program.",
             @click="deleteGCode = true",
             :disabled="!state.selected || !is_ready",style="height:100px;width:100px;font-weight:normal")
-            img(src="images/delete_gcode.png" style="height: 30px;")
+            img(src="images/delete_gcode.png" style="height: 55px;")
 
-          message(:show.sync="deleteGCode")
-            h3(slot="header") Delete G-Code?
-            p(slot="body")
+          message.error-message(:show.sync="deleteGCode")
+            h3(slot="header") Select files to delete:
+            div(slot="body")
+              input.search-bar(type="text", v-model="search_query", placeholder="Search Files...")
+              .container
+                .folders
+                  h3 Folders
+                  div(v-for="(index, folder) in state.gcode_list", :key="index", @click="populateFiles(index)",
+                    class="folder-item", :class="{ selected: index === selected_folder_index }") {{ folder.name }}
+                .files
+                  h3 Files
+                  label.file-item(v-for="item in gcode_filtered_files" :key="item")
+                    input(type="checkbox" :value="item" v-model="selected_items_to_delete")
+                    |  {{ item }}
             div(slot="footer")
-              button.pure-button(@click="deleteGCode = false") Cancel
-              button.pure-button.button-error(@click="delete_all_except_macros")
-                .fa.fa-trash
-                | &nbsp;All
-              button.pure-button.button-success(@click="delete_current")
+              button.pure-button(@click="cancel_delete",style="height:50px") Cancel
+              //- button.pure-button.button-error(@click="delete_all_except_macros")
+              //-   .fa.fa-trash
+              //-   | &nbsp;All
+              button.pure-button.button-success(@click="delete_current",style="height:50px")
                 .fa.fa-trash
                 | &nbsp;Selected
 
@@ -370,8 +384,12 @@ script#control-view-template(type="text/x-template")
 
             select(title="Select previously uploaded GCode programs.",
               v-model="state.selected", @change="load", :disabled="!is_ready",
-              style="max-width:100%;margin-left:5px")
+              style="max-width:300px;margin-left:5px")
               option(v-for="file in gcode_files", :value="file") {{file}}
+            
+            button.pure-button(@click="toggle_sorting", :disabled="!is_ready",
+              style="height:75%")
+              | {{files_sortby}}
 
           .progress(v-if="toolpath_progress && toolpath_progress < 1",
             title="Simulating GCode to check for errors, calculate ETA and " +
