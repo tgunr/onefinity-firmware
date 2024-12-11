@@ -216,7 +216,6 @@ class NetworkHandler(bbctrl.APIHandler):
 class UsernameHandler(bbctrl.APIHandler):
     def get(self): self.write_json(get_username())
 
-
     def put_ok(self):
         if self.get_ctrl().args.demo:
             raise HTTPError(400, 'Cannot set username in demo mode')
@@ -703,81 +702,95 @@ class StaticFileHandler(tornado.web.StaticFileHandler):
 
 class Web(tornado.web.Application):
     def __init__(self, args, ioloop):
-        self.args = args
-        self.ioloop = ioloop
-        self.ctrls = {}
-
-        # Init camera
-        if not args.disable_camera:
-            if self.args.demo: log = bbctrl.log.Log(args, ioloop, 'camera.log')
-            else: log = self.get_ctrl().log
-            self.camera = bbctrl.Camera(ioloop, args, log)
-        else: self.camera = None
-
-        # Init controller
-        if not self.args.demo:
-            self.get_ctrl()
-            self.monitor = bbctrl.MonitorTemp(self)
-
-        handlers = [
-            (r'/websocket', WSConnection),
-            (r'/api/log', LogHandler),
-            (r'/api/message/(\d+)/ack', MessageAckHandler),
-            (r'/api/bugreport', BugReportHandler),
-            (r'/api/reboot', RebootHandler),
-            (r'/api/shutdown', ShutdownHandler),
-            (r'/api/hostname', HostnameHandler),
-            (r'/api/wifi', NetworkData),
-            (r'/api/network', NetworkHandler),
-            (r'/api/remote/username', UsernameHandler),
-            (r'/api/remote/password', PasswordHandler),
-            (r'/api/config/load', ConfigLoadHandler),
-            (r'/api/config/download(/.*)?', ConfigDownloadHandler),
-            (r'/api/config/save', ConfigSaveHandler),
-            (r'/api/config/reset', ConfigResetHandler),
-            (r'/api/config/restore',ConfigRestoreHandler),
-            (r'/api/firmware/update', FirmwareUpdateHandler),
-            (r'/api/upgrade', UpgradeHandler),
-            (r'/api/file(/[^/]+)?', bbctrl.FileHandler),
-            (r'/api/path/([^/]+)((/positions)|(/speeds))?', PathHandler),
-            (r'/api/home(/[xyzabcXYZABC]((/set)|(/clear))?)?', HomeHandler),
-            (r'/api/start', StartHandler),
-            (r'/api/estop', EStopHandler),
-            (r'/api/clear', ClearHandler),
-            (r'/api/stop', StopHandler),
-            (r'/api/pause', PauseHandler),
-            (r'/api/unpause', UnpauseHandler),
-            (r'/api/pause/optional', OptionalPauseHandler),
-            (r'/api/step', StepHandler),
-            (r'/api/position/([xyzabcXYZABC])', PositionHandler),
-            (r'/api/override/feed/([\d.]+)', OverrideFeedHandler),
-            (r'/api/override/speed/([\d.]+)', OverrideSpeedHandler),
-            (r'/api/modbus/read', ModbusReadHandler),
-            (r'/api/modbus/write', ModbusWriteHandler),
-            (r'/api/jog', JogHandler),
-            (r'/api/video', bbctrl.VideoHandler),
-            (r'/api/screen-rotation', ScreenRotationHandler),
-            (r'/api/time', TimeHandler),
-            (r'/api/remote-diagnostics', RemoteDiagnosticsHandler),
-            (r'/(.*)', StaticFileHandler,
-             {'path': os.path.join(os.path.dirname(__file__), '../../../src/svelte-components/dist'),
-              'default_filename': 'index.html'}),
-            ]
-
-        router = sockjs.tornado.SockJSRouter(SockJSConnection, '/sockjs')
-        router.app = self
-
-        tornado.web.Application.__init__(self, router.urls + handlers)
-
         try:
-            self.listen(args.port, address = args.addr)
+            print("DEBUG: Initializing Web server...")
+            self.args = args
+            self.ioloop = ioloop
+            self.ctrls = {}
 
+            # Init camera
+            if not args.disable_camera:
+                print("DEBUG: Initializing camera...")
+                if self.args.demo: log = bbctrl.log.Log(args, ioloop, 'camera.log')
+                else: log = self.get_ctrl().log
+                self.camera = bbctrl.Camera(ioloop, args, log)
+            else: self.camera = None
+
+            # Init controller
+            if not self.args.demo:
+                print("DEBUG: Initializing controller...")
+                self.get_ctrl()
+                self.monitor = bbctrl.MonitorTemp(self)
+
+            print("DEBUG: Setting up handlers...")
+            handlers = [
+                (r'/websocket', WSConnection),
+                (r'/api/log', LogHandler),
+                (r'/api/message/(\d+)/ack', MessageAckHandler),
+                (r'/api/bugreport', BugReportHandler),
+                (r'/api/reboot', RebootHandler),
+                (r'/api/shutdown', ShutdownHandler),
+                (r'/api/hostname', HostnameHandler),
+                (r'/api/wifi', NetworkData),
+                (r'/api/network', NetworkHandler),
+                (r'/api/remote/username', UsernameHandler),
+                (r'/api/remote/password', PasswordHandler),
+                (r'/api/config/load', ConfigLoadHandler),
+                (r'/api/config/download(/.*)?', ConfigDownloadHandler),
+                (r'/api/config/save', ConfigSaveHandler),
+                (r'/api/config/reset', ConfigResetHandler),
+                (r'/api/config/restore',ConfigRestoreHandler),
+                (r'/api/firmware/update', FirmwareUpdateHandler),
+                (r'/api/upgrade', UpgradeHandler),
+                (r'/api/file(/[^/]+)?', bbctrl.FileHandler),
+                (r'/api/path/([^/]+)((/positions)|(/speeds))?', PathHandler),
+                (r'/api/home(/[xyzabcXYZABC]((/set)|(/clear))?)?', HomeHandler),
+                (r'/api/start', StartHandler),
+                (r'/api/estop', EStopHandler),
+                (r'/api/clear', ClearHandler),
+                (r'/api/stop', StopHandler),
+                (r'/api/pause', PauseHandler),
+                (r'/api/unpause', UnpauseHandler),
+                (r'/api/pause/optional', OptionalPauseHandler),
+                (r'/api/step', StepHandler),
+                (r'/api/position/([xyzabcXYZABC])', PositionHandler),
+                (r'/api/override/feed/([\d.]+)', OverrideFeedHandler),
+                (r'/api/override/speed/([\d.]+)', OverrideSpeedHandler),
+                (r'/api/modbus/read', ModbusReadHandler),
+                (r'/api/modbus/write', ModbusWriteHandler),
+                (r'/api/jog', JogHandler),
+                (r'/api/video', bbctrl.VideoHandler),
+                (r'/api/screen-rotation', ScreenRotationHandler),
+                (r'/api/time', TimeHandler),
+                (r'/api/remote-diagnostics', RemoteDiagnosticsHandler),
+                (r'/(.*)', StaticFileHandler,
+                 {'path': os.path.join(os.path.dirname(__file__), '../../../src/svelte-components/src'),
+                  'default_filename': 'index.html'}),
+                ]
+
+            print("DEBUG: Creating SockJS router...")
+            router = sockjs.tornado.SockJSRouter(SockJSConnection, '/sockjs')
+            router.app = self
+
+            print("DEBUG: Initializing Tornado application...")
+            tornado.web.Application.__init__(self, router.urls + handlers)
+
+            try:
+                print("DEBUG: Attempting to listen on %s:%d" % (args.addr, args.port))
+                self.listen(args.port, address=args.addr)
+                print("DEBUG: Successfully listening")
+
+            except Exception as e:
+                print("DEBUG: Failed to bind %s:%d: %s" % (args.addr, args.port, e))
+                raise Exception('Failed to bind %s:%d: %s' % (
+                    args.addr, args.port, e))
+
+            print('Listening on http://%s:%d/' % (args.addr, args.port))
         except Exception as e:
-            raise Exception('Failed to bind %s:%d: %s' % (
-                args.addr, args.port, e))
-
-        print('Listening on http://%s:%d/' % (args.addr, args.port))
-
+            print("DEBUG: Error in Web initialization: %s" % str(e))
+            import traceback
+            traceback.print_exc()
+            raise
 
     def opened(self, ctrl): ctrl.clear_timeout()
 
@@ -802,9 +815,3 @@ class Web(tornado.web.Application):
         else: ctrl = self.ctrls[id]
 
         return ctrl
-
-
-    # Override default logger
-    def log_request(self, handler):
-        log = self.get_ctrl(handler.get_cookie('client-id')).log.get('Web')
-        log.info("%d %s", handler.get_status(), handler._request_summary())
