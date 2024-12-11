@@ -59,7 +59,7 @@ class ShutdownHandler(bbctrl.APIHandler):
         subprocess.Popen(['shutdown','-h','now'])
 
 
-class LogHandler(bbctrl.RequestHandler):
+class LogHandler(bbctrl.APIHandler):
     def get(self):
         with open(self.get_ctrl().log.get_path(), 'r') as f:
             self.write(f.read())
@@ -77,7 +77,7 @@ class MessageAckHandler(bbctrl.APIHandler):
         self.get_ctrl().state.ack_message(int(id))
 
 
-class BugReportHandler(bbctrl.RequestHandler):
+class BugReportHandler(bbctrl.APIHandler):
     def get(self):
         import tarfile, io
 
@@ -760,7 +760,7 @@ class Web(tornado.web.Application):
             (r'/api/time', TimeHandler),
             (r'/api/remote-diagnostics', RemoteDiagnosticsHandler),
             (r'/(.*)', StaticFileHandler,
-             {'path': bbctrl.get_resource('http/'),
+             {'path': os.path.join(os.path.dirname(__file__), '../../../src/svelte-components'),
               'default_filename': 'index.html'}),
             ]
 
