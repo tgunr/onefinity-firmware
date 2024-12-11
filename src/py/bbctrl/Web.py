@@ -697,8 +697,13 @@ class SockJSConnection(ClientConnection, sockjs.tornado.SockJSConnection):
 
 class StaticFileHandler(tornado.web.StaticFileHandler):
     def set_extra_headers(self, path):
-        self.set_header('Cache-Control',
-                        'no-store, no-cache, must-revalidate, max-age=0')
+        self.set_header('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0')
+        print("DEBUG: Serving static file:", path)
+
+    def get(self, path, include_body=True):
+        print("DEBUG: Static file request for:", path)
+        return super().get(path, include_body)
+
 
 class Web(tornado.web.Application):
     def __init__(self, args, ioloop):
