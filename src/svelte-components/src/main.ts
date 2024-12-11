@@ -10,6 +10,13 @@ import DialogHost, { showDialog } from "$dialogs/DialogHost.svelte";
 import { handleConfigUpdate, setDisplayUnits } from "$lib/ConfigStore";
 import { handleControllerStateUpdate } from "$lib/ControllerState";
 import { registerControllerMethods } from "$lib/RegisterControllerMethods";
+import App from './App.svelte';
+
+const app = new App({
+  target: document.getElementById('app')
+})
+
+export default app;
 
 export function createComponent(component: string, target: HTMLElement, props: Record<string, any>) {
     switch (component) {

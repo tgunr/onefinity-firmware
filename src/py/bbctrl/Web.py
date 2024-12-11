@@ -769,7 +769,7 @@ class Web(tornado.web.Application):
                 (r'/api/time', TimeHandler),
                 (r'/api/remote-diagnostics', RemoteDiagnosticsHandler),
                 (r'/(.*)', StaticFileHandler,
-                 {'path': os.path.join(os.path.dirname(__file__), '../../../src/svelte-components'),
+                 {'path': os.path.join(os.path.dirname(__file__), '../../../src/svelte-components/dist'),
                   'default_filename': 'index.html'}),
                 ]
 

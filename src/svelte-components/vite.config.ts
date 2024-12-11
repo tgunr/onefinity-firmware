@@ -16,11 +16,12 @@ export default defineConfig({
     },
     build: {
         target: "chrome60",
-        lib: {
-            entry: resolve(__dirname, "src/main.ts"),
-            name: "SvelteComponents",
-            formats: [ "iife" ],
-            fileName: () => "index.js"
+        outDir: "dist",
+        emptyOutDir: true,
+        rollupOptions: {
+            input: {
+                main: resolve(__dirname, "index.html")
+            }
         }
     }
 });
