@@ -324,14 +324,19 @@ class Planner():
             self.planner.set_logger(None)
 
 
-    def reset(self, *args, **kwargs):
+def reset(self, *args, **kwargs):
+    try:
         stop = kwargs.get('stop', True)
         if stop:
             self.ctrl.mach.stop()
 
-        self.planner = gplan.Planner()
+        print("DEBUG: Creating PlannerConfig...")
+        config = gplan.PlannerConfig()
+        print("DEBUG: Creating Planner with config...")
+        self.planner = gplan.Planner(config)
+        print("DEBUG: Setting resolver...")
         self.planner.set_resolver(self._get_var_cb)
-        # TODO logger is global and will not work correctly in demo mode
+        print("DEBUG: Setting logger...")
         self.planner.set_logger(self._log_cb, 1, 'LinePlanner:3')
         self._position_dirty = True
         self.cmdq.clear()
@@ -340,7 +345,11 @@ class Planner():
         resetState = kwargs.get('resetState', True)
         if resetState:
             self.ctrl.state.reset()
-
+    except Exception as e:
+        print(f"DEBUG: Error in reset: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        raise
 
     def mdi(self, cmd, with_limits = True):
         self.where = '<mdi>'
