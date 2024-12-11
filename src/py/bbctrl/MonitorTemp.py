@@ -41,7 +41,7 @@ def set_max_freq(freq):
 class MonitorTemp(object):
     def __init__(self, app):
         self.app = app
-        self.last_temp = 0
+        self.last_temp = 45
         self.freq = 600000
         self.enabled = True
         self.callback()
@@ -51,13 +51,11 @@ class MonitorTemp(object):
         if not self.enabled: return
         
         try:
-            temp = read_temp()
-            if self.last_temp != temp:
-                self.app.get_ctrl().configure([{'temp': temp}])
-                self.last_temp = temp
+            # Just store the mock temperature, don't try to configure anything
+            self.last_temp = read_temp()
 
         except Exception as e:
-            self.app.get_log().warning('Temperature status: %s' % e)
+            print('Temperature status warning:', e)
 
         # Reschedule
-        self.app.get_ioloop().call_later(60, self.callback)
+        self.app.ioloop.call_later(60, self.callback)
