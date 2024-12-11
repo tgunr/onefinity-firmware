@@ -346,11 +346,11 @@ def reset(self, *args, **kwargs):
         if resetState:
             self.ctrl.state.reset()
     except Exception as e:
-        print(f"DEBUG: Error in reset: {str(e)}")
+        print("DEBUG: Error in reset: %s" % str(e))
         import traceback
         traceback.print_exc()
         raise
-
+    
     def mdi(self, cmd, with_limits = True):
         self.where = '<mdi>'
         self.log.info('MDI:' + cmd)
