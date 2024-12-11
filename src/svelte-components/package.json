@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json"
   },
+  "dependencies": {
+    "sockjs-client": "^1.6.1"
+  },
   "devDependencies": {
     "@sveltejs/kit": "^1.0.0-next.392",
     "@sveltejs/vite-plugin-svelte": "^1.0.1",

@@ -72,6 +72,11 @@
     color: white;
   }
 
+  .status.error {
+    background-color: #ff9800;
+    color: white;
+  }
+
   pre {
     background-color: #f5f5f5;
     padding: 15px;
