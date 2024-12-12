@@ -1,14 +1,8 @@
 module.exports = {
     template: "#settings-view-template",
+    props: ["config", "state"],
 
-    attached: function() {
-        this.svelteComponent = SvelteComponents.createComponent(
-            "SettingsView",
-            document.getElementById("settings")
-        );
-    },
-
-    detached: function() {
-        this.svelteComponent.$destroy();
+    data: function() {
+        return {};
     }
 };

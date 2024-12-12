@@ -751,7 +751,7 @@ module.exports = {
       } else if (this[axis].homingMode != "manual") {
         api.put(`home/${axis}`);
       } else {
-        SvelteComponents.showDialog("ManualHomeAxis", { axis });
+        this.$emit('show-dialog', 'manual-home', { axis });
       }
     },
 
@@ -764,15 +764,15 @@ module.exports = {
     },
 
     show_set_position: function (axis) {
-      SvelteComponents.showDialog("SetAxisPosition", { axis });
+      this.$emit('show-dialog', 'set-position', { axis });
     },
 
     showMoveToZeroDialog: function (axes) {
-      SvelteComponents.showDialog("MoveToZero", { axes });
+      this.$emit('show-dialog', 'move-to-zero', { axes });
     },
 
     showToolpathMessageDialog: function (axis) {
-      SvelteComponents.showDialog("Message", { title: this[axis].toolmsg });
+      this.$emit('show-dialog', 'message', { title: this[axis].toolmsg });
     },
 
     set_position: function (axis, position) {
@@ -850,7 +850,7 @@ module.exports = {
     },
 
     showProbeDialog: function (probeType) {
-      SvelteComponents.showDialog("Probe", { probeType });
+      this.$emit('show-dialog', 'probe', { probeType });
     },
     run_macro: function (id) {
       if (this.state.macros[id].file_name == "default") {

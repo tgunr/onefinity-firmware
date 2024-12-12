@@ -1,14 +1,8 @@
 module.exports = {
     template: "#help-view-template",
+    props: ["config", "state"],
 
-    attached: function() {
-        this.svelteComponent = SvelteComponents.createComponent(
-            "HelpView",
-            document.getElementById("help")
-        );
-    },
-
-    detached: function() {
-        this.svelteComponent.$destroy();
+    data: function() {
+        return {};
     }
 };
