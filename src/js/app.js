@@ -3,45 +3,22 @@
 const api = require("./api");
 const cookie = require("./cookie")("bbctrl-");
 const Sock = require("./sock");
-const semverLt = require("semver/functions/lt");
-
-if (document.getElementById("svelte-dialog-host") != undefined) {
-  SvelteComponents.createComponent(
-    "DialogHost",
-    document.getElementById("svelte-dialog-host")
-  );
-}
-if (document.getElementById("adminViewSvelte") != undefined) {
-  SvelteComponents.createComponent("AdminNetworkView");
-}
+const semverLt = require("./semver-shim");
 
 function parse_version(v) {
     const pattern = /^(\d+)\.(\d+)\.(\d+)(?:[-.]?(.*))?$/;
     const [ version, major, minor, patch, pre ] = v.trim().match(pattern) || [];
-
-    return {
-        version,
-        major,
-        minor,
-        patch,
-        pre
-    };
+    return { version, major, minor, patch, pre };
 }
 
 function fixup_version_number(version) {
     const v = parse_version(version);
-
     version = `${v.major}.${v.minor}.${v.patch}`;
     if (v.pre) {
         const [ , prefix, num ] = v.pre.match(/([a-zA-Z])(\d+)/);
-
-        const suffix = prefix === "b"
-            ? `beta.${num}`
-            : v.pre;
-
+        const suffix = prefix === "b" ? `beta.${num}` : v.pre;
         version = `${version}-${suffix}`;
     }
-
     return version;
 }
 
@@ -54,13 +31,8 @@ function is_array(o) {
 }
 
 function update_array(dst, src) {
-    while (dst.length) {
-        dst.pop();
-    }
-
-    for (let i = 0; i < src.length; i++) {
-        Vue.set(dst, i, src[i]);
-    }
+    while (dst.length) dst.pop();
+    for (let i = 0; i < src.length; i++) Vue.set(dst, i, src[i]);
 }
 
 function hasOwnProperty(obj, key) {
@@ -72,12 +44,9 @@ function update_object(dst, src, remove) {
 
     if (remove) {
         props = Object.getOwnPropertyNames(dst);
-
         for (index in props) {
             key = props[index];
-            if (!hasOwnProperty(src, key)) {
-                Vue.delete(dst, key);
-            }
+            if (!hasOwnProperty(src, key)) Vue.delete(dst, key);
         }
     }
 
@@ -86,55 +55,16 @@ function update_object(dst, src, remove) {
         key = props[index];
         value = src[key];
 
-        if (is_array(value) && hasOwnProperty(dst, key) && is_array(dst[key])) {
+        if (is_array(value) && hasOwnProperty(dst, key) && is_array(dst[key]))
             update_array(dst[key], value);
-        } else if (is_object(value) && hasOwnProperty(dst, key) && is_object(dst[key])) {
+        else if (is_object(value) && hasOwnProperty(dst, key) && is_object(dst[key]))
             update_object(dst[key], value, remove);
-        } else {
-            Vue.set(dst, key, value);
-        }
+        else Vue.set(dst, key, value);
     }
 }
 
 module.exports = new Vue({
     el: "body",
-
-    data: function() {
-        return {
-          status: "connecting",
-          currentView: "loading",
-          display_units: localStorage.getItem("display_units") || "METRIC",
-          index: -1,
-          modified: false,
-          template: require("../resources/config-template.json"),
-          config: {
-            settings: { units: "METRIC" },
-            motors: [{}, {}, {}, {}],
-            version: "<loading>",
-            full_version: "<loading>",
-            ip: "<>",
-            wifiName: "not connected",
-            macros:[{},{},{},{},{},{},{},{}],
-            macros_list:[],
-            non_macros_list:[]
-          },
-          state: {
-            messages: [],
-          },
-          video_size: cookie.get("video-size", "small"),
-          crosshair: cookie.get("crosshair", "false") != "false",
-          errorTimeout: 30,
-          errorTimeoutStart: 0,
-          errorShow: false,
-          errorMessage: "",
-          confirmUpgrade: false,
-          confirmUpload: false,
-          firmwareUpgrading: false,
-          checkedUpgrade: false,
-          firmwareName: "",
-          latestVersion: "",
-        };
-    },
 
     components: {
         estop: { template: "#estop-template" },
@@ -148,304 +78,314 @@ module.exports = new Vue({
         "admin-network-view": require("./admin-network-view"),
         "macros-view": require('./macros'),
         "help-view": require("./help-view"),
-        "cheat-sheet-view": {
-            template: "#cheat-sheet-view-template",
-            data: function() {
-                return {
-                    showUnimplemented: false
-                };
+        "cheat-sheet-view": { template: "#cheat-sheet-view-template" },
+    },
+
+    data: function() {
+        return {
+            status: "connecting",
+            currentView: "loading",
+            display_units: localStorage.getItem("display_units") || "METRIC",
+            index: -1,
+            modified: false,
+            template: require("../resources/config-template.json"),
+            config: {
+                settings: { units: "METRIC" },
+                motors: [{}, {}, {}, {}],
+                version: "<loading>",
+                full_version: "<loading>",
+                ip: "<>",
+                wifiName: "not connected",
+                macros:[{},{},{},{},{},{},{},{}],
+                macros_list:[],
+                non_macros_list:[]
             },
-        },
+            state: {
+                messages: [],
+            },
+            video_size: cookie.get("video-size", "small"),
+            crosshair: cookie.get("crosshair", "false") != "false",
+            errorTimeout: 30,
+            errorTimeoutStart: 0,
+            errorShow: false,
+            errorMessage: "",
+            confirmUpgrade: false,
+            confirmUpload: false,
+            firmwareUpgrading: false,
+            checkedUpgrade: false,
+            firmwareName: "",
+            latestVersion: "",
+        };
     },
 
     watch: {
         display_units: function(value) {
             localStorage.setItem("display_units", value);
-            SvelteComponents.setDisplayUnits(value);
-        },
+        }
     },
 
     events: {
         "config-changed": function() {
             this.modified = true;
+            return false;
         },
 
         send: function(msg) {
-            if (this.status == "connected") {
-                this.sock.send(msg);
-            }
+            if (this._sock) this._sock.send(msg);
+            return false;
         },
 
         connected: function() {
-            this.update();
+            return this._sock && this._sock.connected;
         },
 
         update: function() {
             this.update();
+            return false;
         },
 
-        check: async function() {
-            try {
-                const response = await fetch("https://raw.githubusercontent.com/OneFinityCNC/onefinity-release/master/latest.txt", {
-                    cache: "no-cache"
-                });
-
-                this.latestVersion = (await response.text()).trim();
-            } catch (err) {
-                this.latestVersion = "";
+        check: function() {
+            if (this.state.messages.length) {
+                this.state.messages = [];
+                return true;
             }
+            return false;
         },
 
         upgrade: function() {
             this.confirmUpgrade = true;
+            return false;
         },
 
         upload: function(firmware) {
-            this.firmware = firmware;
-            this.firmwareName = firmware.name;
+            this.firmwareName = firmware;
             this.confirmUpload = true;
+            return false;
         },
 
         error: function(msg) {
-            // Honor user error blocking
-            if (Date.now() - this.errorTimeoutStart < this.errorTimeout * 1000) {
-                return;
-            }
-
-            // Wait at least 1 sec to pop up repeated errors
-            if (1 < msg.repeat && Date.now() - msg.ts < 1000) {
-                return;
-            }
-
-            // Popup error dialog
+            if (msg.message) msg = msg.message;
+            this.errorMessage = msg;
+            this.errorTimeoutStart = new Date().getTime() / 1000;
             this.errorShow = true;
-            this.errorMessage = msg.msg;
-        },
+
+            if (this.errorTimeout) {
+                setTimeout(() => {
+                    const now = new Date().getTime() / 1000;
+                    if (this.errorTimeoutStart + this.errorTimeout <= now)
+                        this.errorShow = false;
+                }, this.errorTimeout * 1000);
+            }
+
+            return false;
+        }
     },
 
     computed: {
         popupMessages: function() {
-            const msgs = [];
+            const messages = [];
 
-            for (let i = 0; i < this.state.messages.length; i++) {
-                const text = this.state.messages[i].text;
-                if (!/^#/.test(text)) {
-                    msgs.push(text);
-                }
-            }
+            this.state.messages.forEach(function(message) {
+                if (message.popup) messages.push(message.text);
+            });
 
-            return msgs;
-        },
+            return messages;
+        }
     },
 
     ready: function() {
         window.onhashchange = () => this.parse_hash();
+        this.parse_hash();
         this.connect();
-
-        SvelteComponents.registerControllerMethods({
-            dispatch: (...args) => this.$dispatch(...args)
-        });
+        this.update();
     },
 
     methods: {
         block_error_dialog: function() {
-            this.errorTimeoutStart = Date.now();
-            this.errorShow = false;
+            this.errorTimeout = 0;
+            this.errorShow = true;
         },
 
         toggle_video: function() {
-            if (this.video_size == "small") {
-                this.video_size = "large";
-            } else if (this.video_size == "large") {
-                this.video_size = "small";
-            }
+            const sizes = ["small", "medium", "large", "xlarge"];
+            let i = sizes.indexOf(this.video_size) + 1;
+            if (sizes.length <= i) i = 0;
+            this.video_size = sizes[i];
             cookie.set("video-size", this.video_size);
         },
 
         toggle_crosshair: function(e) {
-            e.preventDefault();
             this.crosshair = !this.crosshair;
             cookie.set("crosshair", this.crosshair);
+            e.preventDefault();
         },
 
         estop: function() {
-            if (this.state.xx == "ESTOPPED") {
-                api.put("clear");
-            } else {
-                api.put("estop");
-            }
+            this.$broadcast("estop");
+            this._sock.send({"estop": true});
+            this.errorMessage = "EStop";
+            this.errorShow = true;
+            this.errorTimeout = 0;
         },
 
-        upgrade_confirmed: async function() {
+        upgrade_confirmed: function() {
             this.confirmUpgrade = false;
+            this.firmwareUpgrading = true;
+            this.errorShow = false;
 
-            try {
-                await api.put("upgrade");
-                this.firmwareUpgrading = true;
-            } catch (error) {
-                console.error("Error during upgrade:", error);
-                alert("Error during upgrade");
-            }
+            api.put("upgrade").done(() => {
+                this.firmwareUpgrading = false;
+                this.errorMessage = "Firmware upgraded successfully";
+                this.errorShow = true;
+                this.errorTimeout = 3;
+            });
         },
 
-        upload_confirmed: async function() {
+        upload_confirmed: function() {
             this.confirmUpload = false;
+            this.firmwareUpgrading = true;
+            this.errorShow = false;
 
-            const form = new FormData();
-            form.append("firmware", this.firmware);
-
-            try {
-                await api.put("firmware/update", form);
-                this.firmwareUpgrading = true;
-            } catch (error) {
-                console.error("Firmware update failed:", error);
-                alert("Firmware update failed");
-            }
+            api.put("firmware/" + this.firmwareName).done(() => {
+                this.firmwareUpgrading = false;
+                this.errorMessage = "Firmware uploaded successfully";
+                this.errorShow = true;
+                this.errorTimeout = 3;
+            });
         },
 
         show_upgrade: function() {
-            if (!this.latestVersion) {
-                return false;
-            }
-
+            if (this.config.full_version == "<loading>") return false;
+            if (!this.checkedUpgrade) return false;
+            if (!this.latestVersion) return false;
             return semverLt(this.config.full_version, this.latestVersion);
         },
 
         showShutdownDialog: function() {
-            SvelteComponents.showDialog("Shutdown");
+            this.$broadcast("showShutdownDialog");
         },
 
-        update: async function() {
-            const config = await api.get("config/load");
-            const wifi = await api.get("wifi");
-            update_object(this.config, config, true);
-            this.config.full_version = fixup_version_number(this.config.full_version);
-            this.config.ip = wifi.ipAddresses;
-            this.config.wifiName = wifi.wifi;
-            this.parse_hash();
-
-            if (!this.checkedUpgrade) {
+        update: function() {
+            api.get("version").done((version) => {
+                this.latestVersion = version;
                 this.checkedUpgrade = true;
+            });
 
-                const check = this.config.admin["auto-check-upgrade"];
-                if (typeof check == "undefined" || check) {
-                    this.$emit("check");
-                }
-            }
+            api.get("config/load").done((config) => {
+                if (!config.length) return;
 
-            SvelteComponents.handleConfigUpdate(this.config);
+                config = JSON.parse(config);
+
+                if (typeof config.full_version == "undefined")
+                    config.full_version = config.version;
+
+                if (config.version) config.version = fixup_version_number(config.version);
+                if (config.full_version)
+                    config.full_version = fixup_version_number(config.full_version);
+
+                update_object(this.config, config, true);
+            });
         },
 
         connect: function() {
-            this.sock = new Sock(`//${location.host}/sockjs`);
+            const reconnect = () => {
+                this.status = "disconnected";
+                setTimeout(() => this.connect(), 2000);
+            };
 
-            this.sock.onmessage = (e) => {
-                if (typeof e.data != "object") {
+            this._sock = new Sock(this);
+
+            this._sock.onmessage = (msg) => {
+                if (msg.log) {
+                    this.$broadcast("log", msg.log);
                     return;
                 }
 
-                if (e.data.log && e.data.log.msg !== "Switch not found") {
-                    this.$broadcast("log", e.data.log);
-
-                    if (Object.keys(e.data).length === 1) {
-                        // If there's only log data, we're done
-                        return;
-                    }
+                if (msg.error) {
+                    this.$broadcast("error", msg.error);
+                    return;
                 }
 
-                // Check for session ID change on controller
-                if ("sid" in e.data) {
-                    if (typeof this.sid == "undefined") {
-                        this.sid = e.data.sid;
-                    } else if (this.sid != e.data.sid) {
-                        if (this.hostname && location.hostname !== "localhost") {
-                            location.hostname = this.hostname;
-                        }
-
-                        location.reload();
-                    }
+                if (msg.upgrade) {
+                    this.firmwareUpgrading = false;
+                    this.errorMessage = "Firmware upgraded successfully";
+                    this.errorShow = true;
+                    this.errorTimeout = 3;
+                    return;
                 }
 
-                update_object(this.state, e.data, false);
+                if (msg.firmware) {
+                    this.firmwareUpgrading = false;
+                    this.errorMessage = "Firmware uploaded successfully";
+                    this.errorShow = true;
+                    this.errorTimeout = 3;
+                    return;
+                }
 
-                SvelteComponents.handleControllerStateUpdate(this.state);
+                if (msg.message) {
+                    this.state.messages.push(msg.message);
+                    return;
+                }
 
-                delete this.state.log;
-
-                this.$broadcast("update");
+                update_object(this.state, msg, false);
             };
 
-            this.sock.onopen = () => {
+            this._sock.onopen = () => {
                 this.status = "connected";
-                this.$emit(this.status);
-                this.$broadcast(this.status);
+                this.$broadcast("connected");
             };
 
-            this.sock.onclose = () => {
-                this.status = "disconnected";
-                this.$emit(this.status);
-                this.$broadcast(this.status);
+            this._sock.onclose = () => {
+                this.$broadcast("disconnected");
+                reconnect();
             };
+
+            this._sock.onerror = () => reconnect();
+
+            this.status = "connecting";
         },
 
         parse_hash: function() {
-            const hash = location.hash.substr(1);
-
-            if (!hash.trim().length) {
-                location.hash = "control";
-                return;
-            }
+            let hash = document.location.hash.substr(1);
+            if (!hash.length) hash = "control";
 
             const parts = hash.split(":");
+            const view = parts[0];
+            const index = parts.length == 2 ? parseInt(parts[1]) : -1;
 
-            if (parts.length == 2) {
-                this.index = parts[1];
-            }
-
-            this.currentView = parts[0];
+            this.currentView = view + "-view";
+            this.index = index;
         },
 
-        save: async function() {
-            const selected_tool = this.config.tool["selected-tool"];
-            const saveModbus =
-                selected_tool !== "pwm" &&
-                selected_tool !== "laser" &&
-                selected_tool !== "router";
-            const settings = {
-                ["tool"]: { ...this.config.tool },
-                ["pwm-spindle"]: { ...this.config["pwm-spindle"] },
-                ["modbus-spindle"]: saveModbus
-                    ? { ...this.config["modbus-spindle"] }
-                    : undefined,
-            };
-            delete settings.tool["tool-type"];
+        save: function() {
+            const config = JSON.parse(JSON.stringify(this.config));
 
-            this.config["selected-tool-settings"][selected_tool] = settings;
-            this.display_units = this.config.settings["units"];
-            
-            try {
-                await api.put("config/save", this.config);
+            // Don't save the following
+            delete config.version;
+            delete config.full_version;
+            delete config.ip;
+            delete config.wifiName;
+
+            api.put("config/save/" + JSON.stringify(config)).done(() => {
                 this.modified = false;
-            } catch (error) {
-                console.error("Save failed:", error);
-                alert("Save failed");
-            }
+                this.update();
+
+                this.errorMessage = "Configuration saved";
+                this.errorShow = true;
+                this.errorTimeout = 3;
+            });
         },
 
         close_messages: function(action) {
-            if (action == "stop") {
-                api.put("stop");
-            }
+            const messages = [];
 
-            if (action == "continue") {
-                api.put("unpause");
-            }
+            this.state.messages.forEach(function(message) {
+                if (!message.popup) messages.push(message);
+            });
 
-            // Acknowledge messages
-            if (this.state.messages.length) {
-                const id = this.state.messages.slice(-1)[0].id;
-                api.put(`message/${id}/ack`);
-            }
-        },
-    },
+            this.state.messages = messages;
+
+            if (typeof action == "function") action();
+        }
+    }
 });
