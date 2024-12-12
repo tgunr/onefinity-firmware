@@ -310,94 +310,30 @@ class Planner():
             return Cmd.set_sync('id', block['id']) + '\n' + cmd
 
 
-    def reset_times(self):
-        self.move_start = 0
-        self.move_time = 0
-        self.plan_time = 0
-        self.current_plan_time = 0
-
-
-    def close(self):
-        # Release planner callbacks
-        if self.planner is not None:
-            self.planner.set_resolver(None)
-            self.planner.set_logger(None)
-
-
     def reset(self, *args, **kwargs):
-        stop = kwargs.get('stop', True)
+    try:
+        stop = kwargs.get("stop", True)
         if stop:
             self.ctrl.mach.stop()
 
-        self.planner = gplan.Planner()
+        config = gplan.PlannerConfig()
+        self.planner = gplan.Planner(config)
         self.planner.set_resolver(self._get_var_cb)
-        # TODO logger is global and will not work correctly in demo mode
-        self.planner.set_logger(self._log_cb, 1, 'LinePlanner:3')
+        self.planner.set_logger(self._log_cb, 1, "LinePlanner:3")
         self._position_dirty = True
         self.cmdq.clear()
         self.reset_times()
 
-        resetState = kwargs.get('resetState', True)
+        resetState = kwargs.get("resetState", True)
         if resetState:
             self.ctrl.state.reset()
-
+    except Exception as e:
+        self.log.exception("Error in reset: %s" % str(e))
+        raise
 
     def mdi(self, cmd, with_limits = True):
-        self.where = '<mdi>'
-        self.log.info('MDI:' + cmd)
-        self._sync_position()
-        self.planner.load_string(cmd, self.get_config(True, with_limits))
-        self.reset_times()
-
-
-    def load(self, path):
-        self.where = path
-        path = self.ctrl.get_path('upload', path)
-        self.log.info('GCode:' + path)
-        self._sync_position()
-        self.planner.load(path, self.get_config(False, True))
-        self.reset_times()
-
-
-    def stop(self):
-        try:
-            self.planner.stop()
-            self.cmdq.clear()
-
-        except:
-            self.log.exception('Internal error: Planner stop')
-            self.reset()
-
-
-    def restart(self):
-        try:
-            id = self.ctrl.state.get('id')
-            position = self.ctrl.state.get_position()
-
-            self.log.info('Planner restart: %d %s' % (id, log_json(position)))
-
-            self.cmdq.clear()
-            self.cmdq.release(id)
-            self._plan_time_restart()
-            self.planner.restart(id, position)
-
-        except:
-            self.log.exception('Internal error: Planner restart')
-            self.stop()
-
-
-    def next(self):
-        try:
-            while self.planner.has_more():
-                cmd = self.planner.next()
-                cmd = self._encode(cmd)
-                if cmd is not None: return cmd
-
-        except RuntimeError as e:
-            # Pass on the planner message
-            self.log.error(str(e))
-            self.stop()
-
-        except:
-            self.log.exception('Internal error: Planner next')
-            self.stop()
+    self.where = "<mdi>"
+    self.log.info("MDI:" + cmd)
+    self._sync_position()
+    self.planner.load_string(cmd, self.get_config(True, with_limits))
+    self.reset_times()
