@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { connectionStatus, machineState, connectWebSocket } from '$lib/stores/websocket';
+  import { connectionStatus, machineState, connectWebSocket } from './lib/stores/websocket';
 
   onMount(() => {
     connectWebSocket();
