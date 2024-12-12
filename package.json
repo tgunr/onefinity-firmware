@@ -19,6 +19,7 @@
     "glob": "^8.0.3",
     "inquirer": "^8.2.4",
     "jshint": "^2.13.4",
+    "jstransformer-browserify": "^1.0.0",
     "jstransformer-escape-html": "^1.1.0",
     "jstransformer-scss": "^2.0.0",
     "jstransformer-stylus": "^1.5.0",
