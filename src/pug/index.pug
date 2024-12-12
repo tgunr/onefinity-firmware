@@ -13,11 +13,11 @@ html(lang="en")
     style: include ../static/css/clusterize.css
     style: include:stylus ../stylus/style.styl
 
-    script(src="/js/jquery-1.11.3.min.js")
+    script(src="/js/jquery-1.11.3.min.js", defer)
     script(src="/js/vue.js")
-    script(src="/js/socket.io.js")
-    script(src="/js/three.min.js")
-    script(src="/js/app.js")
+    script(src="/js/socket.io.js", defer)
+    script(src="/js/three.min.js", defer)
+    script(src="/js/app.js", defer)
 
   body
     #app(v-cloak)
