@@ -3,7 +3,7 @@
 const api = require("./api");
 const cookie = require("./cookie")("bbctrl-");
 const Sock = require("./sock");
-const semverLt = require("semver/functions/lt");
+const semverLt = require("./semver-shim");
 
 if (document.getElementById("svelte-dialog-host") != undefined) {
   SvelteComponents.createComponent(
