@@ -8,10 +8,11 @@ npm install
 
 # Bundle the JavaScript
 ./node_modules/.bin/browserify \
-  -r ./src/js/api.js:api \
-  -r ./src/js/cookie.js:cookie \
-  -r ./src/js/sock.js:sock \
-  -r semver/functions/lt:semver/functions/lt \
+  -x jquery \
+  -x vue \
+  -x socket.io-client \
+  -x clusterize.js \
+  -x three \
   src/js/app.js -o build/http/js/app.js
 
 # Set permissions
