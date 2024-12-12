@@ -170,7 +170,28 @@ html(lang="en")
             | Continue
             .fa.fa-play
 
-    #templates: include ../../build/templates.pug
+    #templates
+      include templates/tool-view
+      include templates/estop
+      include templates/admin-network-view
+      include templates/modbus-reg-view
+      include templates/io-view
+      include templates/motor-view
+      include templates/io-indicator
+      include templates/help-view
+      include templates/settings-view
+      include templates/macros
+      include templates/indicators
+      include templates/path-viewer
+      include templates/control-view
+      include templates/cheat-sheet-view
+      include templates/templated-input
+      include templates/console
+      include templates/axis-control
+      include templates/message
+      include templates/admin-general-view
+      include templates/gcode-viewer
+
     iframe#download-target(style="display:none")
 
     script: include ../static/js/vue.js
