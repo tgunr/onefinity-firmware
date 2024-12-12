@@ -19,9 +19,8 @@ html(lang="en")
     script(src="/js/three.min.js")
     script(src="/js/app.js")
 
-  body(v-cloak)
-
-    #app
+  body
+    #app(v-cloak)
 
       #overlay(v-if="status != 'connected'")
         span {{status}}
