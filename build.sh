@@ -15,7 +15,7 @@ npm install
 cp node_modules/vue/dist/vue.js build/http/js/
 cp node_modules/socket.io-client/dist/socket.io.js build/http/js/
 cp node_modules/jquery/dist/jquery.min.js build/http/js/jquery-1.11.3.min.js
-cp node_modules/three/build/three.module.js build/http/js/three.min.js
+cp node_modules/three/build/three.module.min.js build/http/js/three.min.js
 
 # Bundle the JavaScript
 ./node_modules/.bin/browserify \
