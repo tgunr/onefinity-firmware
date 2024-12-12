@@ -12,13 +12,9 @@ html(lang="en")
     style: include ../static/css/font-awesome.min.css
     style: include ../static/css/Audiowide.css
     style: include ../static/css/clusterize.css
-    style: include ../svelte-components/node_modules/svelte-material-ui/bare.css
-    style: include ../../build/http/svelte-components/smui.css
-    style: include ../../build/http/svelte-components/style.css
     style: include:stylus ../stylus/style.styl
 
   body(v-cloak)
-    #svelte-dialog-host
 
     #overlay(v-if="status != 'connected'")
       span {{status}}
@@ -174,13 +170,12 @@ html(lang="en")
             | Continue
             .fa.fa-play
 
-    #templates: include ../../build/templates.pug
+    #templates: include templates.pug
     iframe#download-target(style="display:none")
 
     script: include ../static/js/vue.js
     script: include ../static/js/sockjs.min.js
     script: include ../static/js/clusterize.min.js
     script: include ../static/js/three.min.js
-    script: include:browserify ../js/main.js
-    script: include ../../build/http/svelte-components/index.js
+    script: include ../js/app.js
     script: include ../static/js/ui.js
