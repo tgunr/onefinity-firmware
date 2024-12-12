@@ -32,6 +32,14 @@
       <div class="controls-section">
         <h2>Machine Controls</h2>
         
+        <div class="essential-controls">
+          <button class="estop" on:click={() => sendCommand('$estop')}>E-STOP</button>
+          <button class="start" on:click={() => sendCommand('$start')}>Start</button>
+          <button class="stop" on:click={() => sendCommand('$stop')}>Stop</button>
+          <button class="pause" on:click={() => sendCommand('$pause')}>Pause</button>
+          <button class="unpause" on:click={() => sendCommand('$unpause')}>Resume</button>
+        </div>
+
         <div class="jog-controls">
           <div class="jog-distance">
             <label for="jog-distance">Jog Distance (mm)</label>
@@ -242,5 +250,57 @@
 
   .state-item .value {
     color: #333;
+  }
+
+  .essential-controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+
+  .essential-controls button {
+    flex: 1;
+    min-width: 100px;
+  }
+
+  button.estop {
+    background-color: #f44336;
+  }
+
+  button.estop:hover {
+    background-color: #d32f2f;
+  }
+
+  button.start {
+    background-color: #4caf50;
+  }
+
+  button.start:hover {
+    background-color: #388e3c;
+  }
+
+  button.stop {
+    background-color: #ff9800;
+  }
+
+  button.stop:hover {
+    background-color: #f57c00;
+  }
+
+  button.pause {
+    background-color: #2196f3;
+  }
+
+  button.pause:hover {
+    background-color: #1976d2;
+  }
+
+  button.unpause {
+    background-color: #4caf50;
+  }
+
+  button.unpause:hover {
+    background-color: #388e3c;
   }
 </style>
