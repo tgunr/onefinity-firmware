@@ -8,12 +8,18 @@ html(lang="en")
 
     style: include ../static/css/pure-min.css
     style: include ../static/css/side-menu.css
+
     style: include ../static/css/font-awesome.min.css
     style: include ../static/css/Audiowide.css
     style: include ../static/css/clusterize.css
+    style: include ../svelte-components/node_modules/svelte-material-ui/bare.css
+    style: include ../../build/http/svelte-components/smui.css
+    style: include ../../build/http/svelte-components/style.css
     style: include:stylus ../stylus/style.styl
 
   body(v-cloak)
+    #svelte-dialog-host
+
     #overlay(v-if="status != 'connected'")
       span {{status}}
     
@@ -168,33 +174,13 @@ html(lang="en")
             | Continue
             .fa.fa-play
 
-    #templates
-      include templates/tool-view
-      include templates/estop
-      include templates/admin-network-view
-      include templates/modbus-reg-view
-      include templates/io-view
-      include templates/motor-view
-      include templates/io-indicator
-      include templates/help-view
-      include templates/settings-view
-      include templates/macros
-      include templates/indicators
-      include templates/path-viewer
-      include templates/control-view
-      include templates/cheat-sheet-view
-      include templates/templated-input
-      include templates/console
-      include templates/axis-control
-      include templates/message
-      include templates/admin-general-view
-      include templates/gcode-viewer
-
+    #templates: include ../../build/templates.pug
     iframe#download-target(style="display:none")
 
     script: include ../static/js/vue.js
     script: include ../static/js/sockjs.min.js
     script: include ../static/js/clusterize.min.js
     script: include ../static/js/three.min.js
-    script: include ../../dist/js/app.js
+    script: include:browserify ../js/main.js
+    script: include ../../build/http/svelte-components/index.js
     script: include ../static/js/ui.js
