@@ -34,8 +34,8 @@
         
         <div class="jog-controls">
           <div class="jog-distance">
-            <label>Jog Distance (mm)</label>
-            <select bind:value={jogDistance}>
+            <label for="jog-distance">Jog Distance (mm)</label>
+            <select id="jog-distance" bind:value={jogDistance}>
               <option value={0.1}>0.1</option>
               <option value={1.0}>1.0</option>
               <option value={10.0}>10.0</option>
