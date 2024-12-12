@@ -1,35 +1,37 @@
 "use strict";
 
 async function callApi(method, url, data) {
-    try {
-        const headers = {};
-        let body = undefined;
-
-        if (data) {
-            if (data instanceof FormData) {
-                body = data;
-            } else {
-                headers["Content-Type"] = "application/json; charset=utf-8";
-                body = JSON.stringify(data);
-            }
-        }
-
-        const response = await fetch(`/api/${url}`, {
-            method,
-            headers,
-            body,
-            cache: "no-cache",
-        });
-
-        if (response.ok) {
-            return await response.json();
-        }
-
-        throw new Error(await response.text());
-    } catch (error) {
-        console.debug(`API Error: ${url}: ${error}`);
-
-        throw error;
+    // Mock API responses
+    console.debug(`Mock API call: ${method} ${url}`, data);
+    
+    // Return mock data based on the endpoint
+    switch (url) {
+        case 'config':
+            return {
+                motors: [{}, {}, {}, {}],  // 4 mock motors
+                axes: {
+                    x: { length: 1000 },
+                    y: { length: 1000 },
+                    z: { length: 1000 },
+                    a: { length: 360 }
+                },
+                tool: { length: 100 },
+                units: 'METRIC'
+            };
+            
+        case 'state':
+            return {
+                cycle: 'idle',
+                line: 0,
+                tool: 0,
+                feed: 0,
+                speed: 0,
+                position: {x: 0, y: 0, z: 0, a: 0},
+                bbox: {min: {x: 0, y: 0, z: 0}, max: {x: 0, y: 0, z: 0}}
+            };
+            
+        default:
+            return {};
     }
 }
 

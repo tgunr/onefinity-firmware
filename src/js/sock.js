@@ -18,7 +18,29 @@ const Sock = function(url, retry, timeout) {
     this.divisions = 4;
     this.count = 0;
 
-    this.connect();
+    // Mock connection for development
+    setTimeout(() => {
+        console.debug("Mock connection established");
+        this.onopen();
+        
+        // Send mock initial state
+        this.onmessage({
+            data: {
+                sid: "mock-session",
+                state: {
+                    cycle: "idle",
+                    line: 0,
+                    tool: 0,
+                    feed: 0,
+                    speed: 0,
+                    program: "",
+                    position: {x: 0, y: 0, z: 0, a: 0},
+                    bbox: {min: {x: 0, y: 0, z: 0}, max: {x: 0, y: 0, z: 0}},
+                    messages: []
+                }
+            }
+        });
+    }, 1000);
 };
 
 Sock.prototype.onmessage = function() {
@@ -34,73 +56,34 @@ Sock.prototype.onclose = function() {
 };
 
 Sock.prototype.connect = function() {
-    console.debug("connecting to", this.url);
-    this.close();
-
-    this._sock = new SockJS(this.url);
-
-    this._sock.onmessage = function(e) {
-        console.debug("msg:", e.data);
-        this.heartbeat("msg");
-        this.onmessage(e);
-    }.bind(this);
-
-    this._sock.onopen = function() {
-        console.debug("connected");
-        this.heartbeat("open");
-        this.onopen();
-    }.bind(this);
-
-    this._sock.onclose = function() {
-        console.debug("disconnected");
-        this._cancel_timeout();
-
-        this.onclose();
-        if (typeof this._sock != "undefined") {
-            setTimeout(this.connect.bind(this), this.retry);
-        }
-    }.bind(this);
-};
-
-Sock.prototype._timedout = function() {
-    // Divide timeout so slow browser doesn't trigger timeouts when the
-    // connection is good.
-    if (this.divisions <= ++this.count) {
-        console.debug("connection timedout");
-        this._timeout = undefined;
-        this._sock.close();
-
-    } else {
-        this._set_timeout();
-    }
-};
-
-Sock.prototype._cancel_timeout = function() {
-    clearTimeout(this._timeout);
-    this._timeout = undefined;
-    this.count = 0;
-};
-
-Sock.prototype._set_timeout = function() {
-    this._timeout = setTimeout(this._timedout.bind(this),
-        this.timeout / this.divisions);
-};
-
-Sock.prototype.heartbeat = function() {
-    this._cancel_timeout();
-    this._set_timeout();
+    console.debug("Mock connect called");
+    // Do nothing in mock mode
 };
 
 Sock.prototype.close = function() {
-    if (typeof this._sock != "undefined") {
-        const sock = this._sock;
-        this._sock = undefined;
-        sock.close();
-    }
+    console.debug("Mock close called");
+    // Do nothing in mock mode
 };
 
 Sock.prototype.send = function(msg) {
-    this._sock.send(msg);
+    console.debug("Mock send:", msg);
+    // Simulate responses based on message type
+    if (typeof msg === 'string') {
+        try {
+            const data = JSON.parse(msg);
+            if (data.type === 'get') {
+                // Simulate get response
+                this.onmessage({
+                    data: {
+                        type: 'get-response',
+                        value: {}
+                    }
+                });
+            }
+        } catch (e) {
+            console.debug("Error parsing message:", e);
+        }
+    }
 };
 
 module.exports = Sock;
