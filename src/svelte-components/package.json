@@ -13,6 +13,9 @@
   "devDependencies": {
     "pug": "^3.0.2",
     "pug-cli": "^1.0.0-alpha6",
+    "pug-filters": "^4.0.0",
+    "stylus": "^0.54.8",
+    "jstransformer-stylus": "^1.5.0",
     "browserify": "^17.0.0",
     "watchify": "^4.0.0"
   },
