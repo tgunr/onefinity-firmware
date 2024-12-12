@@ -8,7 +8,8 @@
     "sockjs-client": "^1.5.0",
     "jquery": "^1.11.3",
     "three": "^0.125.0",
-    "clusterize.js": "^0.18.1"
+    "clusterize.js": "^0.18.1",
+    "semver": "^7.5.4"
   },
   "devDependencies": {
     "pug": "^3.0.2",
@@ -21,10 +22,10 @@
   },
   "scripts": {
     "prebuild": "mkdir -p ../../dist/js",
-    "build:js": "browserify ../../src/js/main.js -o ../../dist/js/app.js",
+    "build:js": "browserify -r semver ../../src/js/main.js -o ../../dist/js/app.js",
     "build:html": "pug ../../src/pug/index.pug -o ../../dist",
     "build": "npm run build:js && npm run build:html",
-    "watch:js": "watchify ../../src/js/main.js -o ../../dist/js/app.js",
+    "watch:js": "watchify -r semver ../../src/js/main.js -o ../../dist/js/app.js",
     "watch:html": "pug -w ../../src/pug/index.pug -o ../../dist",
     "watch": "npm run watch:js & npm run watch:html"
   }
