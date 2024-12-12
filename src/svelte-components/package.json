@@ -20,7 +20,12 @@
     "watchify": "^4.0.0"
   },
   "scripts": {
-    "build": "mkdir -p ../../dist && mkdir -p ../../dist/js && pug ../../src/pug/index.pug -o ../../dist && browserify ../../src/js/main.js -o ../../dist/js/app.js",
-    "watch": "pug -w ../../src/pug/index.pug -o ../../dist & watchify ../../src/js/main.js -o ../../dist/js/app.js"
+    "prebuild": "mkdir -p ../../dist/js",
+    "build:js": "browserify ../../src/js/main.js -o ../../dist/js/app.js",
+    "build:html": "pug ../../src/pug/index.pug -o ../../dist",
+    "build": "npm run build:js && npm run build:html",
+    "watch:js": "watchify ../../src/js/main.js -o ../../dist/js/app.js",
+    "watch:html": "pug -w ../../src/pug/index.pug -o ../../dist",
+    "watch": "npm run watch:js & npm run watch:html"
   }
 }
