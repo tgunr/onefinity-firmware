@@ -19,15 +19,16 @@
     "stylus": "^0.54.8",
     "jstransformer-stylus": "^1.5.0",
     "browserify": "^17.0.0",
-    "watchify": "^4.0.0"
+    "watchify": "^4.0.0",
+    "jstransformer-browserify": "^1.0.0"
   },
   "scripts": {
     "prebuild": "mkdir -p ../../dist/js",
-    "build:js": "browserify -r semver -r lodash.merge ../../src/js/main.js -o ../../dist/js/app.js",
-    "build:html": "pug ../../src/pug/index.pug -o ../../dist",
+    "build:js": "browserify -r semver -r lodash.merge ../../src/js/main.js > ../../dist/js/app.js",
+    "build:html": "pug -P ../../src/pug/index.pug -o ../../dist",
     "build": "npm run build:js && npm run build:html",
     "watch:js": "watchify -r semver -r lodash.merge ../../src/js/main.js -o ../../dist/js/app.js",
-    "watch:html": "pug -w ../../src/pug/index.pug -o ../../dist",
+    "watch:html": "pug -w -P ../../src/pug/index.pug -o ../../dist",
     "watch": "npm run watch:js & npm run watch:html"
   }
 }
