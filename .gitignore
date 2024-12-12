@@ -27,3 +27,4 @@ __pycache__
 *.elf
 *.hex
 .idea/deployment.xml
+venv/
