@@ -6,10 +6,10 @@ const Sock = function(url, retry, timeout) {
     }
 
     if (typeof retry == "undefined") {
-        retry = 2000;
+        retry = 5000;
     }
     if (typeof timeout == "undefined") {
-        timeout = 16000;
+        timeout = 30000;
     }
 
     this.url = url;
