@@ -19,6 +19,10 @@
     "pug-cli": "^1.0.0-alpha6"
   },
   "dependencies": {
-    "semver": "^7.5.4"
+    "jquery": "^3.7.1",
+    "semver": "^7.5.4",
+    "socket.io-client": "^4.8.1",
+    "three": "^0.171.0",
+    "vue": "^2.6.14"
   }
 }
