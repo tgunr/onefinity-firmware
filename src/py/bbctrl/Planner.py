@@ -310,7 +310,7 @@ class Planner():
             return Cmd.set_sync('id', block['id']) + '\n' + cmd
 
 
-    def reset(self, *args, **kwargs):
+def reset(self, *args, **kwargs):
     try:
         stop = kwargs.get("stop", True)
         if stop:
