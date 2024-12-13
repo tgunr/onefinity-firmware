@@ -330,7 +330,8 @@ def reset(self, *args, **kwargs):
     except Exception as e:
         self.log.exception("Error in reset: %s" % str(e))
         raise
-    def mdi(self, cmd, with_limits = True):
+    
+def mdi(self, cmd, with_limits = True):
     self.where = "<mdi>"
     self.log.info("MDI:" + cmd)
     self._sync_position()
