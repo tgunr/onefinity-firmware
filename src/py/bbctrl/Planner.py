@@ -61,12 +61,16 @@ class Planner():
         self.planner = None
         self._position_dirty = False
         self.where = ''
+        self.resolver = None  # Initialize the resolver attribute
 
         ctrl.state.add_listener(self._update)
 
         self.reset(stop = False)
         self._report_time()
 
+    def set_resolver(self, resolver):
+        """Sets the resolver callback for the planner."""
+        self.resolver = resolver
 
     def is_busy(self): return self.is_running() or self.cmdq.is_active()
     def is_running(self): return self.planner.is_running()
@@ -337,3 +341,5 @@ def mdi(self, cmd, with_limits = True):
     self._sync_position()
     self.planner.load_string(cmd, self.get_config(True, with_limits))
     self.reset_times()
+
+    
