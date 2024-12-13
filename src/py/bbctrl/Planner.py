@@ -53,7 +53,7 @@ def log_floats(o):
 def log_json(o): return json.dumps(log_floats(o))
 
 
-class Planner():
+class BBPlanner():
     def __init__(self, ctrl):
         self.ctrl = ctrl
         self.log = ctrl.log.get('Planner')

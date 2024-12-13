@@ -92,7 +92,7 @@ class Mach(Comm):
         self.ctrl = ctrl
         self.mlog = self.ctrl.log.get('Mach')
 
-        self.planner = bbctrl.Planner(ctrl)
+        self.planner = BBPlanner(ctrl)
         self.unpausing = False
         self.stopping = False
 
