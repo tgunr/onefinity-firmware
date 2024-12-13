@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "type": "python",
+            "request": "launch",
+            "name": "Copilot Debug",
+            "program": "${workspaceFolder}/setup.py",
+            "args": [
+                "install"
+            ],
+            "sudo": true,
+            "console": "integratedTerminal",
+            "internalConsoleOptions": "openOnSessionStart",
+            "env": {
+                "PYTHONPATH": "${workspaceFolder}/venv",
+                "PYTHON": "${workspaceFolder}/venv/bin/python"
+            }
+        }
+    ]
+}
