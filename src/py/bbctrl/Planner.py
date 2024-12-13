@@ -310,27 +310,27 @@ class Planner():
             return Cmd.set_sync('id', block['id']) + '\n' + cmd
 
 
-def reset(self, *args, **kwargs):
-    try:
-        stop = kwargs.get("stop", True)
-        if stop:
-            self.ctrl.mach.stop()
+    def reset(self, *args, **kwargs):
+        try:
+            stop = kwargs.get("stop", True)
+            if stop:
+                self.ctrl.mach.stop()
 
-        config = gplan.PlannerConfig()
-        self.planner = gplan.Planner(config)
-        self.planner.set_resolver(self._get_var_cb)
-        self.planner.set_logger(self._log_cb, 1, "LinePlanner:3")
-        self._position_dirty = True
-        self.cmdq.clear()
-        self.reset_times()
+            config = gplan.PlannerConfig()
+            self.planner = gplan.Planner(config)
+            self.planner.set_resolver(self._get_var_cb)
+            self.planner.set_logger(self._log_cb, 1, "LinePlanner:3")
+            self._position_dirty = True
+            self.cmdq.clear()
+            self.reset_times()
 
-        resetState = kwargs.get("resetState", True)
-        if resetState:
-            self.ctrl.state.reset()
-    except Exception as e:
-        self.log.exception("Error in reset: %s" % str(e))
-        raise
-    
+            resetState = kwargs.get("resetState", True)
+            if resetState:
+                self.ctrl.state.reset()
+        except Exception as e:
+            self.log.exception("Error in reset: %s" % str(e))
+            raise
+        
 def mdi(self, cmd, with_limits = True):
     self.where = "<mdi>"
     self.log.info("MDI:" + cmd)
