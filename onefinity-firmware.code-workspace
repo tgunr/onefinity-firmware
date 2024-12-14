@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../Work/onefinity-firmware"
+		}
+	],
+	"settings": {
+		"git.ignoredRepositories": [
+			"rpi-share/camotics",
+			"rpi-share/cbang"
+		],
+		"git.confirmSync": false
+	}
+}
