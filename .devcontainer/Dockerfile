@@ -6,5 +6,12 @@ RUN apt update && apt install -y wget unzip libx11-6 libxkbfile1 libasound2 liba
 RUN wget https://update.code.visualstudio.com/1.64.2/linux-deb-x64/stable -O vscode.deb && \
     dpkg -i vscode.deb && \
     rm vscode.deb
+COPY install_tools.sh /tmp/install_tools.sh
+
+    # Set execute permissions and run script
+RUN sudo chmod +x /tmp/install_tools.sh && \
+        /tmp/install_tools.sh && \
+        rm /tmp/install_tools.sh
+    
 EXPOSE 8080
 CMD ["code", "--no-sandbox", "--user-data-dir", "/app/.vscode"]
