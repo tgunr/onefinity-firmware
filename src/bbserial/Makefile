@@ -10,17 +10,13 @@ export KERNEL=kernel7
 
 KOPTS=ARCH=arm CROSS_COMPILE=$(CROSS) -C $(KDIR)
 
-all: $(KDIR) prepare
+all: $(KDIR)
 	$(MAKE) $(KOPTS) M=$(DIR) modules
 
-prepare: $(KDIR)
-	$(MAKE) $(KOPTS) bcm2709_defconfig
-	$(MAKE) $(KOPTS) modules_prepare
-
-ifeq ($(wildcard $(KDIR)),)
 $(KDIR): $(KPKG)
 	tar xf $(KPKG)
-endif
+	$(MAKE) $(KOPTS) bcm2709_defconfig
+	$(MAKE) $(KOPTS) modules_prepare
 
 $(KPKG):
 	wget $(KURL)

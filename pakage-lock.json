@@ -1,6 +1,6 @@
 {
     "name": "bbctrl",
-    "version": "1.4.2",
+    "version": "1.4.3",
     "lockfileVersion": 2,
     "requires": true,
     "packages": {
@@ -5549,8 +5549,8 @@
             }
         },
         "node_modules/timers-browserify": {
-            "version": "1.4.2",
-            "resolved": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-1.4.2.tgz",
+            "version": "1.4.3",
+            "resolved": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-1.4.3.tgz",
             "integrity": "sha512-PIxwAupJZiYU4JmVZYwXp9FKsHMXb5h0ZEFyuXTAn8WLHOlcij+FEcbrvDsom1o5dr1YggEtFbECvGCW2sT53Q==",
             "dev": true,
             "dependencies": {
@@ -10298,8 +10298,8 @@
             }
         },
         "timers-browserify": {
-            "version": "1.4.2",
-            "resolved": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-1.4.2.tgz",
+            "version": "1.4.3",
+            "resolved": "https://registry.npmjs.org/timers-browserify/-/timers-browserify-1.4.3.tgz",
             "integrity": "sha512-PIxwAupJZiYU4JmVZYwXp9FKsHMXb5h0ZEFyuXTAn8WLHOlcij+FEcbrvDsom1o5dr1YggEtFbECvGCW2sT53Q==",
             "dev": true,
             "requires": {
