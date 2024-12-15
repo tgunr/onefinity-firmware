@@ -1,0 +1,3 @@
+[submodule "linux-rpi-raspberrypi-kernel_1.20171029-1"]
+	path = linux-rpi-raspberrypi-kernel_1.20171029-1
+	url = ./linux-rpi-raspberrypi-kernel_1.20171029-1
