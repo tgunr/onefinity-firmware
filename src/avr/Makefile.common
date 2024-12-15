@@ -1,7 +1,7 @@
 # Compile flags
 CC = avr-g++
 
-COMMON = -mmcu=$(MCU) -flto -fwhole-program
+COMMON = -mmcu=$(MCU)
 
 CFLAGS += $(COMMON)
 CFLAGS += -Wall -Werror
@@ -65,7 +65,6 @@ size: $(PROJECT).elf
 
 data-usage: $(PROJECT).elf
 	avr-nm -CS --size-sort -t decimal $(PROJECT).elf | grep ' [BbDd] '
-
 
 prog-usage: $(PROJECT).elf
 	avr-nm -CS --size-sort -t decimal $(PROJECT).elf | grep -v ' [BbDd] '
