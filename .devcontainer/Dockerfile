@@ -33,7 +33,15 @@ RUN apt-get install -y \
     avr-libc \
     avrdude \
     bc \
-    sudo
+    sudo \
+    tar \
+    bzip2 \
+    xz-utils \
+    fakeroot \
+    build-essential \
+    attr \
+    acl \
+    e2fsprogs
 
 # Install Node.js
 RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - && \
@@ -42,11 +50,26 @@ RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - && \
 # Setup compiler alternatives
 RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 50 && \
     update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 50 
+
 # Install Python packages
 RUN python3 -m pip install 'yapf<0.32.0'
+
 # Cleanup
 RUN apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /app
+# Setup workspace with proper permissions
+RUN mkdir -p /workspace && \
+    chown -R root:root /workspace && \
+    chmod -R 755 /workspace && \
+    mkdir -p /tmp/build && \
+    chmod 1777 /tmp/build
+
+WORKDIR /workspace
+
+# Set environment variables for build
+ENV TMPDIR=/tmp/build
+ENV TEMP=/tmp/build
+ENV TMP=/tmp/build
+
 CMD ["/bin/bash"]
