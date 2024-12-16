@@ -1,0 +1,11 @@
+FROM --platform=linux/arm64 dockcross/linux-armv7
+
+WORKDIR /build
+
+# Copy the kernel source and module source
+COPY src/bbserial/linux-rpi-raspberrypi-kernel_1.20171029-1 /build/linux-rpi-raspberrypi-kernel_1.20171029-1/
+COPY src/bbserial/bbserial.c /build/src/bbserial/
+COPY src/bbserial/Makefile /build/src/bbserial/
+
+# Build the module
+CMD ["make", "-C", "src/bbserial"]
