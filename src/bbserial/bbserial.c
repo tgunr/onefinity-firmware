@@ -459,14 +459,14 @@ static long _dev_ioctl(struct file *file, unsigned cmd, unsigned long arg) {
   switch (cmd) {
   case TCGETS: { // Get serial port settings
     struct ktermios *term = _get_term();
-    if (copy_to_user((void __user *)arg, &term, sizeof(struct termios)))
+    if (copy_to_user((void __user *)arg, term, sizeof(struct ktermios)))
       return -EFAULT;
     return 0;
   }
 
   case TCSETS: { // Set serial port settings
     struct ktermios term;
-    if (copy_from_user(&term, (void __user *)arg, sizeof(struct termios)))
+    if (copy_from_user(&term, (void __user *)arg, sizeof(struct ktermios)))
       return -EFAULT;
     return _set_term(&term);
   }
@@ -588,7 +588,7 @@ static int _probe(struct amba_device *dev, const struct amba_id *id) {
   }
 
   // Register device class
-  _port.class = class_create(THIS_MODULE, "bbs");
+  _port.class = class_create("bbs");
   if (IS_ERR(_port.class)) {
     unregister_chrdev(_port.major, DEVICE_NAME);
     clk_disable_unprepare(_port.clk);
@@ -659,7 +659,7 @@ static struct amba_driver _driver = {
   .drv = {.name  = "bbserial"},
   .id_table = _ids,
   .probe    = _probe,
-  .remove   = _remove,
+  .remove   = (void (*)(struct amba_device *))_remove,
 };
 
 
