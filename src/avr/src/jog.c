@@ -146,9 +146,13 @@ stat_t command_jog(char *cmd) {
 
   // Start jogging
   if (state_get() != STATE_JOGGING) {
-    memset(&jr, 0, sizeof(jr));
-
+    // Initialize jr structure
     jr.holding = state_get() == STATE_HOLDING;
+    jr.writing = false;
+    for (int axis = 0; axis < AXES; axis++) {
+        jr.next[axis] = 0;
+        jr.targetV[axis] = 0;
+    }
 
     for (int axis = 0; axis < AXES; axis++)
       if (axis_is_enabled(axis))
