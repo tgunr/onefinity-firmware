@@ -16,10 +16,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 14.x
-RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - && \
+# Install Node.js 18.x
+RUN curl -fsSL https://deb.nodesource.com/setup_18.x | bash - && \
     apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
+
+# Install npm packages globally
+RUN npm install -g vite@4.5.1 typescript
+
+# Set working directory for svelte components and create package.json
+WORKDIR /workspace/onefinity-firmware/src/svelte-components
+RUN echo '{\n\
+  "name": "svelte-components",\n\
+  "version": "0.0.0",\n\
+  "type": "module",\n\
+  "scripts": {\n\
+    "dev": "vite",\n\
+    "build": "vite build",\n\
+    "preview": "vite preview"\n\
+  },\n\
+  "dependencies": {\n\
+    "svelte": "^4.2.0"\n\
+  },\n\
+  "devDependencies": {\n\
+    "@sveltejs/vite-plugin-svelte": "^2.4.6",\n\
+    "@tsconfig/svelte": "^5.0.2",\n\
+    "typescript": "^5.3.3",\n\
+    "vite": "^4.5.1"\n\
+  }\n\
+}' > package.json && npm install --legacy-peer-deps
+
+# Reset working directory
+WORKDIR /workspace
 
 # Install additional Python packages
 RUN pip3 install tornado
@@ -37,9 +65,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     bc \
     sudo \
     && rm -rf /var/lib/apt/lists/*
-
-# Set working directory
-WORKDIR /workspace
 
 # Set default command
 CMD ["/bin/bash"]
