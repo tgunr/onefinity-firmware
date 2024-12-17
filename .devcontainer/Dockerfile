@@ -1,8 +1,37 @@
-FROM debian:9-slim
+# Use GCC ARM base image which includes build tools
+FROM arm32v7/gcc:9.3
 
-# [Choice] Debian version (use bullseye on local arm64/Apple Silicon): bullseye, buster
-ARG VARIANT=bullseye
-FROM mcr.microsoft.com/vscode/devcontainers/base:${VARIANT}
-COPY ./install_tools.sh /tmp/install_tools.sh
-RUN chmod +x /tmp/install_tools.sh
-RUN /tmp/install_tools.sh
+# Set non-interactive frontend
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Update package sources to use cloudflare mirror
+RUN echo "deb https://cloudfront.debian.net/debian buster main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb https://cloudfront.debian.net/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
+
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional Python packages
+RUN pip3 install tornado
+
+# Install AVR tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-avr \
+    avr-libc \
+    avrdude \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    bc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /workspace
+
+# Set default command
+CMD ["/bin/bash"]
