@@ -19,12 +19,15 @@ if [ ! -e $GPLAN_IMG ]; then
     fi
 
     # Copy base image
-    cp $IMG_BASE.img $GPLAN_IMG.tmp
+    if [ ! -e $GPLAN_IMG.tmp ]; then
+        cp $IMG_BASE.img $GPLAN_IMG.tmp
+    fi
 
     # Init image
     mkdir -p rpi-share
     cp ./scripts/gplan-init-dev-img.sh rpi-share
     chmod +x ./rpi-share/gplan-init-dev-img.sh
+    echo "Entering chroot $GPLAN_IMG.tmp /mnt/host/gplan-init-dev-img.sh"
     sudo ./scripts/rpi-chroot.sh $GPLAN_IMG.tmp /mnt/host/gplan-init-dev-img.sh
 
     # Move image
