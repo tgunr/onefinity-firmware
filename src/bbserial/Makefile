@@ -8,13 +8,17 @@ obj-m += bbserial.o
 KDIR := linux-rpi-raspberrypi-kernel_1.20171029-1
 KOPTS = ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR)
 
-all: $(KDIR)
+all: $(KDIR) prepare
 	$(MAKE) $(KOPTS) M=$(DIR) modules
 
-$(KDIR): $(KPKG)
-	tar xf $(KPKG)
+prepare: $(KDIR)
 	$(MAKE) $(KOPTS) bcm2709_defconfig
 	$(MAKE) $(KOPTS) modules_prepare
+
+ifeq ($(wildcard $(KDIR)),)
+$(KDIR): $(KPKG)
+	tar xf $(KPKG)
+endif
 
 $(KPKG):
 	wget $(KURL)

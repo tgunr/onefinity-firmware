@@ -1,4 +1,4 @@
-# See here for image contents: https://github.com/microsoft/vscode-dev-containers/blob/v0.241.1/containers/debian/.devcontainer/base.Dockerfile
+FROM debian:9-slim
 
 # [Choice] Debian version (use bullseye on local arm64/Apple Silicon): bullseye, buster
 ARG VARIANT=bullseye
