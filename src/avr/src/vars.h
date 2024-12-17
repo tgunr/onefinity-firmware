@@ -27,10 +27,33 @@
 
 #pragma once
 
-#include "status.h"
+#include "type.h"
+#include "cpp_magic.h"
 
-#include <stdbool.h>
+// Index constants
+#define INDEX_AXES 1
+#define INDEX_MOTORS 2
+#define INDEX_OUTS 3
+#define INDEX_ANALOG 4
+#define INDEX_VFDREG 5
 
+// Variable types
+typedef uint8_t type_b8;
+typedef uint8_t type_u8;
+typedef uint16_t type_u16;
+typedef uint32_t type_u32;
+typedef int32_t type_s32;
+typedef float type_f32;
+typedef const char *type_str;
+typedef const char *type_pstr;
+
+// Variable declarations
+#define VAR(NAME, CODE, TYPE, INDEX, SET, ...) \
+  extern type_##TYPE get_##NAME(int8_t index); \
+  IF(SET)(extern void set_##NAME(int8_t index, type_##TYPE value);)
+
+#include "vars.def"
+#undef VAR
 
 float var_decode_float(const char *value);
 bool var_parse_bool(const char *value);
