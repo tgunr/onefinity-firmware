@@ -28,3 +28,5 @@ __pycache__
 *.hex
 .idea/deployment.xml
 gplan-dev.img.tmp
+.snapshots/
+tools/

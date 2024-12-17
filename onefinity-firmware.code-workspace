@@ -2,6 +2,9 @@
     "folders": [
         {
             "path": "."
+        },
+        {
+            "path": "src/bbserial/linux-rpi-raspberrypi-kernel_1.20171029-1"
         }
     ]
 }
