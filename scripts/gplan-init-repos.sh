@@ -8,8 +8,8 @@ error_exit() {
 
 echo "Configure APT sources with modern URLs"
 cat <<EOF > /etc/apt/sources.list || error_exit "Failed to write sources.list"
-deb [arch=armhf signed-by=/usr/share/keyrings/raspberrypi-archive-keyring.gpg] https://archive.raspberrypi.org/debian/ bullseye main
-deb [arch=armhf signed-by=/usr/share/keyrings/raspbian-archive-keyring.gpg] https://archive.raspbian.org/raspbian/ bullseye main contrib non-free rpi
+deb [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_14.x stretch main
+deb-src [signed-by=/usr/share/keyrings/nodesource.gpg] https://deb.nodesource.com/node_14.x stretch main
 EOF
 
 echo "Set global APT configuration"
