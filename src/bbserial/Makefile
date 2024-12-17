@@ -1,6 +1,6 @@
 CROSS:=arm-linux-gnueabihf-
 DIR:=$(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-obj-m:=bbserial.o
+obj-m += bbserial.o
 ccflags-y:=-std=gnu99 -Wno-declaration-after-statement
 
 KPKG=raspberrypi-kernel_1.20171029-1.tar.gz
