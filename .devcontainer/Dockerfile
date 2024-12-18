@@ -14,6 +14,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-pip \
     curl \
     gnupg \
+    flex \
+    bison \
+    bc \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js 18.x
@@ -62,7 +66,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Install additional utilities
 RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
-    bc \
     sudo \
     && rm -rf /var/lib/apt/lists/*
 
