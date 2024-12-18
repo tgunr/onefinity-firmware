@@ -2,6 +2,9 @@
 // https://github.com/microsoft/vscode-dev-containers/blob/v0.241.1/containers/debian
 {
     "name": "Onefinity Firmware Dev",
+    "hostRequirements": {
+        "storage": "50gb"
+    },
     "build": {
         "dockerfile": "Dockerfile",
         // Update 'VARIANT' to pick an Debian version: bullseye, buster
@@ -36,7 +39,9 @@
                 "redhat.vscode-yaml",
                 "ryu1kn.partial-diff",
                 "ms-python.python",
-                "ms-vscode.cpptools"
+                "ms-vscode.cpptools",
+                "axetroy.vscode-git-file-size",
+                "github.vscode-git-lfs"
             ]
         }
     },
