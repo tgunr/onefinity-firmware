@@ -92,13 +92,19 @@ $(TARGET_DIR)/index.html: $(wildcard src/svelte-components/dist/*)
 FORCE:
 
 $(TARGET_DIR)/%.html: src/pug/%.pug node_modules FORCE
-    cd src/svelte-components && rm -rf dist && npm run build
-    @mkdir -p $(TARGET_DIR)/svelte-components
-    cp src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
-    $(PUG) -O pug-opts.js -P $< -o $(TARGET_DIR) || (rm -f $@; exit 1)
-	
+	cd src/svelte-components && rm -rf dist && npm run build
+	@mkdir -p $(TARGET_DIR)/svelte-components
+	@cp -r src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
+	@$(PUG) -O pug-opts.js -P $< -o $(TARGET_DIR) || (rm -f $@; exit 1)
+
+node_modules: package.json
+	npm cache clean --force && npm install --legacy-peer-deps && touch node_modules
+
 clean:
+	@echo "The following files will be cleaned:"
+	@git clean -fd -n
+	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
+	@git clean -fd || (echo "Clean failed"; exit 1)
 	rm -rf rpi-share
-	git clean -fxd
 
 .PHONY: all install clean tidy pkg gplan lint pylint jshint bbserial
