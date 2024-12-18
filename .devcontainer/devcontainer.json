@@ -41,7 +41,9 @@
                 "ms-python.python",
                 "ms-vscode.cpptools",
                 "axetroy.vscode-git-file-size",
-                "github.vscode-git-lfs"
+                "github.vscode-git-lfs",
+                "eamodio.gitlens",
+                "mhutchie.git-graph"
             ]
         }
     },
