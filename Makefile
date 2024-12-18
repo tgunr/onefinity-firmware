@@ -92,13 +92,11 @@ $(TARGET_DIR)/index.html: $(wildcard src/svelte-components/dist/*)
 FORCE:
 
 $(TARGET_DIR)/%.html: src/pug/%.pug node_modules FORCE
-	cd src/svelte-components && rm -rf dist && npm run build
-	@mkdir -p $(TARGET_DIR)/svelte-components
-	cp src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
-
-	@mkdir -p $(TARGET_DIR)
-	$(PUG) -O pug-opts.js -P $< -o $(TARGET_DIR) || (rm -f $@; exit 1)
-
+    cd src/svelte-components && rm -rf dist && npm run build
+    @mkdir -p $(TARGET_DIR)/svelte-components
+    cp src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
+    $(PUG) -O pug-opts.js -P $< -o $(TARGET_DIR) || (rm -f $@; exit 1)
+	
 clean:
 	rm -rf rpi-share
 	git clean -fxd
