@@ -38,6 +38,21 @@
 
 #include <stdio.h>
 
+// State strings in program memory
+static const char str_estopped[] PROGMEM = { 'E', 'S', 'T', 'O', 'P', 'P', 'E', 'D', '\0' };
+static const char str_ready[] PROGMEM = { 'R', 'E', 'A', 'D', 'Y', '\0' };
+static const char str_running[] PROGMEM = { 'R', 'U', 'N', 'N', 'I', 'N', 'G', '\0' };
+static const char str_jogging[] PROGMEM = { 'J', 'O', 'G', 'G', 'I', 'N', 'G', '\0' };
+static const char str_stopping[] PROGMEM = { 'S', 'T', 'O', 'P', 'P', 'I', 'N', 'G', '\0' };
+static const char str_holding[] PROGMEM = { 'H', 'O', 'L', 'D', 'I', 'N', 'G', '\0' };
+static const char str_invalid[] PROGMEM = { 'I', 'N', 'V', 'A', 'L', 'I', 'D', '\0' };
+
+// Hold reason strings in program memory
+static const char str_user_pause[] PROGMEM = { 'U', 's', 'e', 'r', ' ', 'p', 'a', 'u', 's', 'e', '\0' };
+static const char str_user_stop[] PROGMEM = { 'U', 's', 'e', 'r', ' ', 's', 't', 'o', 'p', '\0' };
+static const char str_program_pause[] PROGMEM = { 'P', 'r', 'o', 'g', 'r', 'a', 'm', ' ', 'p', 'a', 'u', 's', 'e', '\0' };
+static const char str_optional_pause[] PROGMEM = { 'O', 'p', 't', 'i', 'o', 'n', 'a', 'l', ' ', 'p', 'a', 'u', 's', 'e', '\0' };
+static const char str_switch_found[] PROGMEM = { 'S', 'w', 'i', 't', 'c', 'h', ' ', 'f', 'o', 'u', 'n', 'd', '\0' };
 
 static struct {
   bool flushing;
@@ -56,28 +71,28 @@ static struct {
 
 PGM_P state_get_pgmstr(state_t state) {
   switch (state) {
-  case STATE_READY:     return PSTR("READY");
-  case STATE_ESTOPPED:  return PSTR("ESTOPPED");
-  case STATE_RUNNING:   return PSTR("RUNNING");
-  case STATE_JOGGING:   return PSTR("JOGGING");
-  case STATE_STOPPING:  return PSTR("STOPPING");
-  case STATE_HOLDING:   return PSTR("HOLDING");
+  case STATE_ESTOPPED: return str_estopped;
+  case STATE_READY:    return str_ready;
+  case STATE_RUNNING:  return str_running;
+  case STATE_JOGGING:  return str_jogging;
+  case STATE_STOPPING: return str_stopping;
+  case STATE_HOLDING:  return str_holding;
   }
 
-  return PSTR("INVALID");
+  return str_invalid;
 }
 
 
 PGM_P state_get_hold_reason_pgmstr(hold_reason_t reason) {
   switch (reason) {
-  case HOLD_REASON_USER_PAUSE:     return PSTR("User pause");
-  case HOLD_REASON_USER_STOP:      return PSTR("User stop");
-  case HOLD_REASON_PROGRAM_PAUSE:  return PSTR("Program pause");
-  case HOLD_REASON_OPTIONAL_PAUSE: return PSTR("Optional pause");
-  case HOLD_REASON_SWITCH_FOUND:   return PSTR("Switch found");
+  case HOLD_REASON_USER_PAUSE:     return str_user_pause;
+  case HOLD_REASON_USER_STOP:      return str_user_stop;
+  case HOLD_REASON_PROGRAM_PAUSE:  return str_program_pause;
+  case HOLD_REASON_OPTIONAL_PAUSE: return str_optional_pause;
+  case HOLD_REASON_SWITCH_FOUND:   return str_switch_found;
   }
 
-  return PSTR("INVALID");
+  return str_invalid;
 }
 
 

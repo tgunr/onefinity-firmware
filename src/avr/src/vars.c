@@ -32,6 +32,7 @@ static type_u type_get(type_t type, uint8_t index, const void* ptr);
 static bool _find_var(const char* name, var_info_t* info);
 static void _report_var_value(const char* name, var_info_t* info, bool* reported);
 static bool decode_type(const char *value, type_t type, type_u *v);
+static bool _is_valid_value(type_t type, const type_u *value);
 
 // Variable handlers
 typedef bool (*var_handler_t)(const char* name, var_info_t* info);
@@ -62,9 +63,10 @@ typedef const char* pstr_t;
 #undef VAR
 
 // Format strings
-static const char code_fmt[] PROGMEM = "\"%s\":";
-static const char indexed_code_fmt[] PROGMEM = "\"%c%s\":";
-
+static const char code_fmt[] PROGMEM = { '"', '%', 's', ':', '\0' };
+static const char indexed_code_fmt[] PROGMEM = { '"', '%', 'c', '%', 's', ':', '\0' };
+static const char u8_fmt[] PROGMEM = { '%', 'u', '\0' };
+static const char s8_fmt[] PROGMEM = { '%', 'd', '\0' };
 // Report vars
 static uint8_t _report_var[32] = {0,};
 
@@ -185,19 +187,37 @@ bool var_exists(const char* name) {
   return _find_var(name, &info);
 }
 
+// Add validation helper
+static bool _is_valid_value(type_t type, const type_u *value) {
+    if (!value) return false;
+    
+    switch (type) {
+        case TYPE_str:
+        case TYPE_pstr:
+            return value->_str != NULL;
+        default:
+            return true; // Other types are valid by default
+    }
+}
+
 // Print type value
 static void type_print(type_t type, const type_u *value) {
-  switch (type) {
-    case TYPE_u8: printf_P(PSTR("%u"), value->_u8); break;
-    case TYPE_s8: printf_P(PSTR("%d"), value->_s8); break;
-    case TYPE_u16: printf_P(PSTR("%u"), value->_u16); break;
-    case TYPE_u32: printf_P(PSTR("%lu"), value->_u32); break;
-    case TYPE_s32: printf_P(PSTR("%ld"), value->_s32); break;
-    case TYPE_f32: printf_P(PSTR("%f"), value->_f32); break;
-    case TYPE_b8: printf_P(PSTR("%d"), value->_b8); break;
-    case TYPE_str: printf_P(PSTR("\"%s\""), value->_str); break;
-    case TYPE_pstr: printf_P(PSTR("\"%S\""), value->_str); break;
-  }
+    if (!_is_valid_value(type, value)) {
+        printf_P(PSTR("null"));
+        return;
+    }
+
+    switch (type) {
+        case TYPE_u8: printf_P(u8_fmt, value->_u8); break;
+        case TYPE_s8: printf_P(s8_fmt, value->_s8); break;
+        case TYPE_u16: printf_P(PSTR("%u"), value->_u16); break;
+        case TYPE_u32: printf_P(PSTR("%lu"), value->_u32); break;
+        case TYPE_s32: printf_P(PSTR("%ld"), value->_s32); break;
+        case TYPE_f32: printf_P(PSTR("%f"), value->_f32); break;
+        case TYPE_b8: printf_P(PSTR("%d"), value->_b8); break;
+        case TYPE_str: printf_P(PSTR("\"%s\""), value->_str); break;
+        case TYPE_pstr: printf_P(PSTR("\"%S\""), value->_str); break;
+    }
 }
 
 // Report variable value
