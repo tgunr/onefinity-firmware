@@ -1,0 +1,40 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# top-most EditorConfig file
+root = true
+
+# All files
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# JSON files
+[*.{json,jsonc}]
+indent_style = space
+indent_size = 4
+
+# Markdown files
+[*.{md,rmd}]
+trim_trailing_whitespace = false
+
+# Makefile
+[Makefile]
+indent_style = tab
+indent_size = 4
+
+# HTML files
+[*.{html,embeddedhtml}]
+indent_style = space
+indent_size = 2
+
+# JavaScript files 
+[*.{js,dbclient-js}]
+indent_style = space
+indent_size = 2
+
+# Vue files
+[*.vue]
+indent_style = space
+indent_size = 2
