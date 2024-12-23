@@ -1,75 +1,119 @@
-FROM debian:9-slim
+# Use GCC ARM base image which includes build tools
+FROM arm64v8/gcc:9.3
 
+# Set non-interactive frontend
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Configure apt to use archive
-RUN echo "deb http://archive.debian.org/debian/ stretch main" > /etc/apt/sources.list && \
-    echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-valid-until && \
-    echo 'APT::Get::AllowUnauthenticated "true";' > /etc/apt/apt.conf.d/99allow-unauth && \
+# Copy the GPG keys from the host to the container
+COPY .devcontainer/nodesource.gpg /etc/apt/keyrings/nodesource.gpg
+COPY .devcontainer/debian-archive-keyring.gpg /etc/apt/keyrings/debian-archive-keyring.gpg
+COPY .devcontainer/debian-archive-removed-keys.gpg /etc/apt/keyrings/debian-archive-removed-keys.gpg
+
+# Update package sources to use cloudflare mirror
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://cloudfront.debian.net/debian buster main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/debian-archive-keyring.gpg] https://cloudfront.debian.net/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
+
+# Clear cache and create space
+RUN rm -rf /var/lib/apt/lists/* && \
+    mkdir -p /var/cache/apt/archives/partial && \
+    apt-get clean
+
+# Create keyrings directory and install base packages
+RUN mkdir -p /etc/apt/keyrings && \
     apt-get update && \
-    apt-get -y install --no-install-recommends gnupg wget && \
-    apt-get -y install --no-install-recommends gcc g++ make dpkg-dev libc6-dev
-
-# Add armhf architecture and Raspbian repositories
-RUN dpkg --add-architecture armhf && \
-    echo "deb [trusted=yes allow-insecure=yes check-valid-until=no] http://legacy.raspbian.org/raspbian/ stretch main contrib non-free rpi" > /etc/apt/sources.list.d/raspi.list && \
-    echo "deb [trusted=yes allow-insecure=yes check-valid-until=no] http://legacy.raspberrypi.org/debian/ stretch main" >> /etc/apt/sources.list.d/raspi.list && \
-    apt-get update
-
-# Update package lists
-RUN apt-get -o Acquire::Check-Valid-Until=false update
-
-# Install all required packages
-RUN apt-get install -y \
-    unzip \
-    libx11-6 \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    gnupg \
     curl \
-    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Add repository keys
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    curl -fsSL https://ftp-master.debian.org/keys/archive-key-11.asc | gpg --dearmor -o /etc/apt/keyrings/debian-archive.gpg && \
+    curl -fsSL https://ftp-master.debian.org/keys/archive-key-11-security.asc | gpg --dearmor -o /etc/apt/keyrings/debian-security.gpg
+
+# Configure sources
+RUN echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/debian-archive.gpg] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/debian-security.gpg] http://security.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list
+
+# Update package sources and add GPG keys
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates \
+    gnupg \
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys \
+        648ACFD622F3D138 \
+        0E98404D386FA1D9 \
+        DCC9EFBF77E11517 \
+        112695A0E562B32A \
+        54404762BBB6E853
+
+# Update package sources to use cloudflare mirror
+RUN echo "deb [trusted=yes] https://cloudfront.debian.net/debian buster main contrib non-free" > /etc/apt/sources.list && \
+    echo "deb [trusted=yes] https://cloudfront.debian.net/debian-security buster/updates main contrib non-free" >> /etc/apt/sources.list
+
+# Install required packages
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3 \
     python3-pip \
-    python3-tornado \
-    gcc-avr \
-    binutils-avr \
-    avr-libc \
-    avrdude \
+    curl \
+    flex \
+    bison \
     bc \
-    sudo \
-    tar \
-    bzip2 \
-    xz-utils \
-    fakeroot \
     build-essential \
-    attr \
-    acl \
-    e2fsprogs
+    && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/setup_14.x | bash - && \
-    apt-get install -y nodejs 
-
-# Setup compiler alternatives
-RUN update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-6 50 && \
-    update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-6 50 
-
-# Install Python packages
-RUN python3 -m pip install 'yapf<0.32.0'
-
-# Cleanup
-RUN apt-get clean && \
+# Install Node.js 18.x
+RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource.gpg.key | apt-key add - && \
+    echo "deb [trusted=yes] https://deb.nodesource.com/node_18.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+    apt-get update && \
+    apt-get install -y nodejs && \
     rm -rf /var/lib/apt/lists/*
 
-# Setup workspace with proper permissions
-RUN mkdir -p /workspace && \
-    chown -R root:root /workspace && \
-    chmod -R 755 /workspace && \
-    mkdir -p /tmp/build && \
-    chmod 1777 /tmp/build
+# Install npm packages globally
+RUN npm install -g vite@4.5.1 typescript
 
+# Set working directory for svelte components and create package.json
+WORKDIR /workspace/onefinity-firmware/src/svelte-components
+RUN echo '{\n\
+  "name": "svelte-components",\n\
+  "version": "0.0.0",\n\
+  "type": "module",\n\
+  "scripts": {\n\
+    "dev": "vite",\n\
+    "build": "vite build",\n\
+    "preview": "vite preview"\n\
+  },\n\
+  "dependencies": {\n\
+    "svelte": "^4.2.0"\n\
+  },\n\
+  "devDependencies": {\n\
+    "@sveltejs/vite-plugin-svelte": "^2.4.6",\n\
+    "@tsconfig/svelte": "^5.0.2",\n\
+    "typescript": "^5.3.3",\n\
+    "vite": "^4.5.1"\n\
+  }\n\
+}' > package.json && npm install --legacy-peer-deps
+
+# Reset working directory
 WORKDIR /workspace
 
-# Set environment variables for build
-ENV TMPDIR=/tmp/build
-ENV TEMP=/tmp/build
-ENV TMP=/tmp/build
+# Install additional Python packages
+RUN pip3 install tornado
 
+# Install AVR tools
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    gcc-avr \
+    avr-libc \
+    avrdude \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install additional utilities
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    unzip \
+    sudo \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set default command
 CMD ["/bin/bash"]

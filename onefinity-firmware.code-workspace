@@ -1,14 +1,16 @@
 {
-	"folders": [
-		{
-			"path": "."
-		}
-	],
-	"settings": {
-		"git.ignoredRepositories": [
-			"rpi-share/camotics",
-			"rpi-share/cbang"
-		],
-		"git.confirmSync": false
-	}
+    "folders": [
+        {
+            "path": "."
+        },
+        {
+            "path": "src/bbserial/linux-rpi-raspberrypi-kernel_1.20171029-1"
+        }
+    ],
+    "settings": {
+        "DockerRun.DisableDockerrc": true,
+        "DockerRun.Containers": [
+            "ec4806ad8bf8"
+        ]
+    }
 }

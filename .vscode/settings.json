@@ -27,5 +27,12 @@
         "rpi-share/cbang"
     ],
     "git.autofetch": false,
-    "git.confirmSync": false
+    "git.confirmSync": false,
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/home/davec/onefinity-firmware/src/boot",
+            "binaryPath": "/home/davec/onefinity-firmware/src/boot/bbctrl-avr-boot.elf",
+            "binaryArgs": []
+        }
+    ]
 }

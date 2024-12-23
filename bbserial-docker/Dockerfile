@@ -6,9 +6,7 @@ RUN echo "deb http://ftp.debian.org/debian/ stretch main contrib non-free" > /et
     echo "deb-src http://ftp.debian.org/debian/ stretch main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb http://security.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list && \
     echo "deb-src http://security.debian.org/debian-security stretch/updates main" >> /etc/apt/sources.list
-RUN echo "deb http://archive.debian.org/debian/ stretch main contrib non-free" > /etc/apt/sources.list && \
-    echo "deb http://archive.debian.org/debian-security stretch/updates main contrib non-free" >> /etc/apt/sources.list
-    
+
 # Install necessary packages and configure NodeSource repository
 RUN apt-get update && apt-get install -y \
     curl \
