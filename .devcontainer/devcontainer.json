@@ -3,7 +3,8 @@
 {
     "name": "Onefinity Firmware Dev",
     "hostRequirements": {
-        "storage": "100gb"
+        "storage": "100gb",
+        "memory": "8gb"
     },
     "build": {
         "dockerfile": "Dockerfile",
@@ -17,7 +18,9 @@
         // The primary reason this is here is to enable loopback devices,
         // which are used for mounting disk images during builds, etc.
         "--privileged",
-        "--cap-add=SYS_ADMIN"
+        "--cap-add=SYS_ADMIN",
+        "--memory=8g",
+        "--memory-swap=16g"
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],

@@ -47,14 +47,27 @@ gplan: $(GPLAN_TARGET)
 $(GPLAN_TARGET): $(GPLAN_MOD)
 	cp $< $@
 
-$(GPLAN_MOD): $(GPLAN_IMG)
-	./scripts/gplan-init-build.sh
-	cp ./scripts/gplan-build.sh rpi-share/
-	chmod +x rpi-share/gplan-build.sh
-	sudo ./scripts/rpi-chroot.sh $(GPLAN_IMG) /mnt/host/gplan-build.sh
+$(GPLAN_MOD):
+	mkdir -p rpi-share/cbang rpi-share/camotics
+	git -C rpi-share/cbang init
+	git -C rpi-share/cbang remote add origin https://github.com/CauldronDevelopmentLLC/cbang
+	git -C rpi-share/cbang fetch --depth 1 origin 18f1e963107ef26abe750c023355a5c40dd07853
+	git -C rpi-share/cbang reset --hard FETCH_HEAD
+	git -C rpi-share/camotics init
+	git -C rpi-share/camotics remote add origin https://github.com/CauldronDevelopmentLLC/camotics
+	git -C rpi-share/camotics fetch --depth 1 origin ec876c80d20fc19837133087cef0c447df5a939d
+	git -C rpi-share/camotics reset --hard FETCH_HEAD
+	cd rpi-share && CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C cbang disable_local="re2 libevent" && \
+	export CBANG_HOME="/workspace/onefinity-firmware/rpi-share/cbang" && \
+	export LC_ALL=C && \
+	mkdir -p camotics/build && \
+	touch camotics/build/version.txt && \
+	perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
+	perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
+	perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
+	CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
 $(GPLAN_IMG):
-	./scripts/gplan-init-build.sh
 
 .PHONY: $(AVR_FIRMWARE)
 $(AVR_FIRMWARE):
