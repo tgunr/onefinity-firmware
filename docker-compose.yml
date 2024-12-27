@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  dev:
+    build:
+      context: .
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - .:/workspace
+      - ./src/bbserial/linux-rpi-raspberrypi-kernel_1.20171029-1:/usr/src/linux-headers-6.1.21-v8+
+    working_dir: /workspace
+    command: sleep infinity
