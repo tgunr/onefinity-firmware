@@ -2,22 +2,25 @@ FROM arm64v8/debian:bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Create keyrings directory
-RUN mkdir -p /etc/apt/keyrings
-
 # Configure APT
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until
 
-# Add Raspberry Pi repository key
-RUN curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg
-
-# Use Debian and Raspberry Pi archives
+# Add initial repositories and install curl and gpg
 RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
+    apt-get update && \
+    apt-get install -y curl gnupg && \
+    rm -rf /var/lib/apt/lists/*
+
+# Create keyrings directory and add Raspberry Pi repository key
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg
+
+# Add Raspberry Pi repository
+RUN echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
 
 # Install base packages
 RUN dpkg --add-architecture armhf && \
@@ -30,9 +33,7 @@ RUN dpkg --add-architecture armhf && \
     flex \
     bison \
     bc \
-    curl \
     git \
-    gnupg \
     python3 \
     python3-pip \
     python3-dev \
