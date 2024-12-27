@@ -46,6 +46,7 @@ RUN dpkg --add-architecture armhf && \
     avr-libc \
     binutils-avr \
     gcc-10-arm-linux-gnueabihf \
+    g++-10-arm-linux-gnueabihf \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
@@ -92,12 +93,13 @@ RUN echo '{\n\
 RUN pip3 install tornado
 
 # Set up cross-compilation environment variables
-ENV CC=gcc-10-arm-linux-gnueabihf \
-    CXX=arm-linux-gnueabihf-g++ \
+ENV CC=arm-linux-gnueabihf-gcc-10 \
+    CXX=arm-linux-gnueabihf-g++-10 \
     AR=arm-linux-gnueabihf-ar \
     RANLIB=arm-linux-gnueabihf-ranlib \
     LD=arm-linux-gnueabihf-ld \
-    KERNEL_SRC=/usr/src/linux-headers-6.1.21-v8+
+    STRIP=arm-linux-gnueabihf-strip \
+    KERNEL_SRC=/usr/src/linux-headers-rpi-v8
 
 # Switch to developer user
 USER developer

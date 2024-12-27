@@ -1,6 +1,7 @@
 DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ccflags-y := -std=gnu99
 ccflags-y += -fno-pic -fno-pie
+EXTRA_CFLAGS := -fno-stack-protector
 
 obj-m += bbserial.o
 
