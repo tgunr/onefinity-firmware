@@ -4,6 +4,8 @@ ccflags-y += -fno-pic -fno-pie
 EXTRA_CFLAGS := -fno-stack-protector
 KBUILD_CFLAGS_MODULE := -fno-stack-protector
 KBUILD_MODFILE := bbserial
+KBUILD_MODNAME := bbserial
+KBUILD_MODPOST_WARN := 1
 
 obj-m += bbserial.o
 

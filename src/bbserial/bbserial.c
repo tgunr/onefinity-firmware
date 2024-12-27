@@ -41,6 +41,8 @@
 #include <linux/of.h>
 #include <linux/interrupt.h>
 #include <linux/version.h>
+#include <linux/fs.h>
+#include <linux/cdev.h>
 
 /* Function prototypes */
 static void _rx_chars(void);
@@ -142,7 +144,7 @@ static int bbserial_remove(struct platform_device *dev);
 
 #define UART011_ICR         0x44    /* Interrupt Clear Register */
 
-MODULE_LICENSE("GPL");
+static const char __module_license[] __attribute__((section(".modinfo"), used)) = "license=GPL";
 MODULE_AUTHOR("Joseph Coffland");
 MODULE_DESCRIPTION("BeagleBone Serial Port Driver");
 MODULE_VERSION("1.0");
