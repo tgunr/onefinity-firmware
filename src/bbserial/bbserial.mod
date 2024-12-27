@@ -1,1 +1,1 @@
-/workspace/src/bbserial/bbserial.o
+/workspace/onefinity-firmware/src/bbserial/bbserial.o

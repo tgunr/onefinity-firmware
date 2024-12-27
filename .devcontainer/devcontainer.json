@@ -1,5 +1,3 @@
-// For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
-// https://github.com/microsoft/vscode-dev-containers/blob/v0.241.1/containers/debian
 {
     "name": "Onefinity Firmware Dev",
     "hostRequirements": {
@@ -8,6 +6,7 @@
     },
     "build": {
         "dockerfile": "Dockerfile",
+        "context": "..",
         // Update 'VARIANT' to pick an Debian version: bullseye, buster
         // Use bullseye on local arm64/Apple Silicon.
         "args": {
@@ -20,7 +19,8 @@
         "--privileged",
         "--cap-add=SYS_ADMIN",
         "--memory=8g",
-        "--memory-swap=16g"
+        "--memory-swap=16g",
+        "--userns=keep-id"
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
@@ -30,6 +30,10 @@
     "features": {
         "sshd": "latest"
     },
+    "containerUser": "developer",
+    "remoteUser": "developer",
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/onefinity-firmware,type=bind,Z",
+    "workspaceFolder": "/workspace/onefinity-firmware",
     "customizations": {
         "vscode": {
             "extensions": [
@@ -47,13 +51,12 @@
                 "github.vscode-git-lfs",
                 "eamodio.gitlens",
                 "mhutchie.git-graph",
-                "ms-vscode.cpptools-extension-pack"
+                "ms-vscode.cpptools-extension-pack",
+                "svelte.svelte-vscode",
+                "ms-vscode.makefile-tools"
             ]
         }
     },
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-    "remoteUser": "root",
     "mounts": [
         "type=tmpfs,destination=/tmp",
         "type=bind,source=/dev,target=/dev"

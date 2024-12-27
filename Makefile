@@ -116,8 +116,6 @@ node_modules: package.json
 clean:
 	@echo "The following files will be cleaned:"
 	@git clean -fd -n
-	@echo "Are you sure? [y/N] " && read ans && [ $${ans:-N} = y ]
-	@git clean -fd || (echo "Clean failed"; exit 1)
 	rm -rf rpi-share
 
 .PHONY: all install clean tidy pkg gplan lint pylint jshint bbserial

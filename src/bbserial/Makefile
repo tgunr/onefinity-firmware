@@ -1,28 +1,17 @@
-CROSS_COMPILE := arm-linux-gnueabihf-
 DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
 ccflags-y := -std=gnu99 -Wno-declaration-after-statement
 ccflags-y += -Wno-fallthrough
+ccflags-y += -fno-pic -fno-pie
 
 obj-m += bbserial.o
 
-KDIR := linux-rpi-raspberrypi-kernel_1.20171029-1
-KOPTS = ARCH=arm CROSS_COMPILE=$(CROSS_COMPILE) -C $(KDIR)
+KERNEL_SRC ?= /usr/src/linux-headers-$(shell uname -r)
+ARCH ?= arm
+CROSS_COMPILE ?= arm-linux-gnueabihf-
 
-all: $(KDIR) prepare
-	$(MAKE) $(KOPTS) M=$(DIR) modules
-
-prepare: $(KDIR)
-	$(MAKE) $(KOPTS) bcm2709_defconfig
-	$(MAKE) $(KOPTS) modules_prepare
-
-ifeq ($(wildcard $(KDIR)),)
-$(KDIR): $(KPKG)
-	tar xf $(KPKG)
-endif
-
-$(KPKG):
-	wget $(KURL)
+all:
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL_SRC) M=$(DIR) modules
 
 clean:
-	$(MAKE) $(KOPTS) M=$(DIR) clean
-	rm -rf $(KDIR) $(KPKG)
+	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL_SRC) M=$(DIR) clean
+	rm -rf *.o *.ko *.mod.* .*.cmd Module.symvers modules.order .tmp_versions
