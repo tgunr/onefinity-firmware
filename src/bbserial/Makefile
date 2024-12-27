@@ -25,3 +25,5 @@ clean:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL_SRC) M=$(DIR) clean
 	rm -rf $(DIR)/overlays
 	rm -rf *.o *.ko *.mod.* .*.cmd Module.symvers modules.order .tmp_versions
+
+.PHONY: all clean overlays bbserial.ko
