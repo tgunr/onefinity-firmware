@@ -11,19 +11,17 @@ RESOURCES  := $(shell find src/resources -type f)
 RESOURCES  := $(patsubst src/resources/%,$(TARGET_DIR)/%,$(RESOURCES))
 TEMPLS     := $(wildcard src/pug/templates/*.pug)
 
+GPLAN_MOD := rpi-share/camotics/gplan.so
+GPLAN_TARGET := src/py/gplan.so
+GPLAN_IMG := rpi-share/rpi-root.img
+GPLAN_KURL := http://archive.raspberrypi.org/debian/pool/main/l/linux-4.9/linux-image-4.9.0-4-rpi2_4.9.65-3+rpi2_armhf.deb
+GPLAN_KPKG := $(notdir $(GPLAN_KURL))
+
 AVR_FIRMWARE := src/avr/bbctrl-avr-firmware.hex
-GPLAN_MOD    := rpi-share/camotics/gplan.so
-GPLAN_TARGET := src/py/camotics/gplan.so
-GPLAN_IMG    := gplan-dev.img
+BBSERIAL_MOD := src/bbserial/bbserial.ko
+BBSERIAL_DTBO := src/bbserial/overlays/bbserial.dtbo
 
-RSYNC_EXCLUDE := \*.pyc __pycache__ \*.egg-info \\\#* \*~ .\\\#\*
-RSYNC_EXCLUDE := $(patsubst %,--exclude %,$(RSYNC_EXCLUDE))
-RSYNC_OPTS    := $(RSYNC_EXCLUDE) -rv --no-g --delete --force
-
-VERSION  := $(shell sed -n 's/^.*"version": "\([^"]*\)",.*$$/\1/p' package.json)
-PKG_NAME := bbctrl-$(VERSION)
-
-SUBPROJECTS := avr boot pwr jig
+SUBPROJECTS := avr boot pwr jig bbserial
 
 ifndef HOST
 HOST=onefinity.local
@@ -33,16 +31,11 @@ ifndef PASSWORD
 PASSWORD=onefinity
 endif
 
-all: $(HTML) $(RESOURCES)
+all: $(GPLAN_TARGET) $(AVR_FIRMWARE) $(BBSERIAL_MOD) $(BBSERIAL_DTBO) $(HTML) $(RESOURCES)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
 
-pkg: all $(AVR_FIRMWARE) bbserial
+pkg: all
 	./setup.py sdist
-
-bbserial:
-	$(MAKE) -C src/bbserial
-
-gplan: $(GPLAN_TARGET)
 
 $(GPLAN_TARGET): $(GPLAN_MOD)
 	cp $< $@
@@ -72,6 +65,10 @@ $(GPLAN_IMG):
 .PHONY: $(AVR_FIRMWARE)
 $(AVR_FIRMWARE):
 	$(MAKE) -C src/avr
+
+.PHONY: $(BBSERIAL_MOD) $(BBSERIAL_DTBO)
+$(BBSERIAL_MOD) $(BBSERIAL_DTBO):
+	$(MAKE) -C src/bbserial
 
 update: pkg
 	http_proxy= curl -i -X PUT -H "Content-Type: multipart/form-data" \
@@ -114,6 +111,9 @@ node_modules: package.json
 	npm cache clean --force && npm install --legacy-peer-deps && touch node_modules
 
 clean:
+	rm -rf $(GPLAN_TARGET) $(GPLAN_MOD) $(GPLAN_IMG) $(GPLAN_KPKG)
+	$(MAKE) -C src/avr clean
+	$(MAKE) -C src/bbserial clean
 	@echo "The following files will be cleaned:"
 	@git clean -fd -n
 	rm -rf rpi-share
