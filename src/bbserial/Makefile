@@ -1,11 +1,10 @@
 DIR := $(shell dirname $(realpath $(lastword $(MAKEFILE_LIST))))
-ccflags-y := -std=gnu99 -Wno-declaration-after-statement
-ccflags-y += -Wno-fallthrough
+ccflags-y := -std=gnu99
 ccflags-y += -fno-pic -fno-pie
 
 obj-m += bbserial.o
 
-KERNEL_SRC ?= /usr/src/raspberrypi-kernel-headers
+KERNEL_SRC ?= /usr/src/linux-headers-6.1.21-v8+
 ARCH ?= arm
 CROSS_COMPILE ?= arm-linux-gnueabihf-
 DTC ?= dtc
