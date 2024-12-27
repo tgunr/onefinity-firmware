@@ -1,10 +1,6 @@
 FROM arm64v8/debian:bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
-ENV ARCH=arm
-ENV CROSS_COMPILE=arm-linux-gnueabihf-
-ENV KERNEL_SRC="/usr/src/linux-headers-$(uname -r)"
-ENV PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 # Create keyrings directory
 RUN mkdir -p /etc/apt/keyrings
@@ -12,8 +8,10 @@ RUN mkdir -p /etc/apt/keyrings
 # Configure APT
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
-    echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
-    echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
+    echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until
+
+# Use Debian archive
+RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list
 
@@ -23,7 +21,7 @@ RUN dpkg --add-architecture armhf && \
     apt-get install -y --no-install-recommends \
     build-essential \
     crossbuild-essential-armhf \
-    linux-headers-arm64 \
+    linux-headers-armmp:armhf \
     curl \
     git \
     gnupg \
@@ -41,12 +39,14 @@ RUN dpkg --add-architecture armhf && \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
-RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" > /etc/apt/sources.list.d/nodesource.list && \
+RUN mkdir -p /etc/apt/keyrings && \
+    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_18.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list && \
     apt-get update && \
     apt-get install -y nodejs && \
-    rm -rf /var/lib/apt/lists/*
-    
+    rm -rf /var/lib/apt/lists/* && \
+    rm -f /etc/apt/sources.list.d/nodesource.list
+
 # Install npm packages globally
 RUN npm install -g vite@4.5.1 typescript
 
@@ -87,7 +87,7 @@ ENV CC=arm-linux-gnueabihf-gcc \
     AR=arm-linux-gnueabihf-ar \
     RANLIB=arm-linux-gnueabihf-ranlib \
     LD=arm-linux-gnueabihf-ld
-    
+
 # Switch to developer user
 USER developer
 
