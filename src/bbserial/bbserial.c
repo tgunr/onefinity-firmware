@@ -246,10 +246,12 @@ static void _tx_chars(void)
 
 static void _rx_chars(void)
 {
+  // Local variables
   unsigned space = RING_BUF_SPACE(_port.rx_buf);
   unsigned status;
   unsigned ch;
 
+  // Read from UART FIFO until it is empty or buffer is full
   while (space--)
   {
     // Check if UART FIFO empty
@@ -313,11 +315,11 @@ static int _read_status(void)
 
 static void _write_status(int status)
 {
-  if (debug)
-    printk(KERN_INFO "bbserial: _write_status() = %d\n", status);
-
   unsigned long flags;
   unsigned cr;
+
+  if (debug)
+    printk(KERN_INFO "bbserial: _write_status() = %d\n", status);
 
   spin_lock_irqsave(&_port.lock, flags);
 
@@ -558,13 +560,13 @@ static int _dev_open(struct inode *inodep, struct file *filep)
 static ssize_t _dev_read(struct file *filep, char *buffer, size_t len,
                          loff_t *offset)
 {
-  if (debug)
-    printk(KERN_INFO "bbserial: read() len=%zu overruns=%d\n", len,
-           _port.overruns);
-
   ssize_t bytes = 0;
   unsigned fill = RING_BUF_FILL(_port.rx_buf);
   unsigned long flags;
+
+  if (debug)
+    printk(KERN_INFO "bbserial: read() len=%zu overruns=%d\n", len,
+           _port.overruns);
 
   if (fill)
   {
@@ -592,13 +594,13 @@ static ssize_t _dev_read(struct file *filep, char *buffer, size_t len,
 static ssize_t _dev_write(struct file *filep, const char *buffer, size_t len,
                           loff_t *offset)
 {
-  if (debug)
-    printk(KERN_INFO "bbserial: write() len=%zu tx=%d rx=%d\n",
-           len, RING_BUF_FILL(_port.tx_buf), RING_BUF_FILL(_port.rx_buf));
-
   ssize_t bytes = 0;
   unsigned space = RING_BUF_SPACE(_port.tx_buf);
   unsigned long flags;
+
+  if (debug)
+    printk(KERN_INFO "bbserial: write() len=%zu tx=%d rx=%d\n",
+           len, RING_BUF_FILL(_port.tx_buf), RING_BUF_FILL(_port.rx_buf));
 
   if (space)
   {
