@@ -1,28 +1,26 @@
-DIR := $(shell dirname $(lastword $(MAKEFILE_LIST)))
-
-NODE_MODS  := $(DIR)/node_modules
-PUG        := $(NODE_MODS)/.bin/pug
-STYLUS     := $(NODE_MODS)/.bin/stylus
-
-TARGET_DIR := build/http
-HTML       := index
-HTML       := $(patsubst %,$(TARGET_DIR)/%.html,$(HTML))
-RESOURCES  := $(shell find src/resources -type f)
-RESOURCES  := $(patsubst src/resources/%,$(TARGET_DIR)/%,$(RESOURCES))
-TEMPLS     := $(wildcard src/pug/templates/*.pug)
-
+# Build targets
 GPLAN_MOD := rpi-share/camotics/gplan.so
 GPLAN_TARGET := src/py/gplan.so
 GPLAN_IMG := rpi-share/rpi-root.img
 GPLAN_KURL := http://archive.raspberrypi.org/debian/pool/main/l/linux-4.9/linux-image-4.9.0-4-rpi2_4.9.65-3+rpi2_armhf.deb
 GPLAN_KPKG := $(notdir $(GPLAN_KURL))
 
+# Firmware targets
 AVR_FIRMWARE := src/avr/bbctrl-avr-firmware.hex
 BBSERIAL_MOD := src/bbserial/bbserial.ko
 BBSERIAL_DTBO := src/bbserial/overlays/bbserial.dtbo
 
+# Web targets
+TARGET_DIR := src/py/bbctrl/http/
+HTML := $(patsubst src/pug/%.pug,$(TARGET_DIR)/%.html,$(wildcard src/pug/[^_]*.pug))
+RESOURCES := $(wildcard src/resources/*)
+RESOURCES := $(patsubst src/resources/%,$(TARGET_DIR)/%,$(RESOURCES))
+TEMPLS := $(wildcard src/pug/templates/*.pug)
+
+# Subprojects
 SUBPROJECTS := avr boot pwr jig bbserial
 
+# Configuration
 ifndef HOST
 HOST=onefinity.local
 endif
@@ -31,13 +29,19 @@ ifndef PASSWORD
 PASSWORD=onefinity
 endif
 
-all: $(GPLAN_TARGET) firmware modules $(HTML) $(RESOURCES)
-	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
+# Main targets
+all: $(GPLAN_TARGET) firmware modules web
+
+.PHONY: all clean firmware modules pkg update install web
+
+web: $(HTML) $(RESOURCES)
 
 firmware: $(AVR_FIRMWARE)
+	@for SUB in avr boot pwr jig; do $(MAKE) -C src/$$SUB; done
 
 modules: $(BBSERIAL_MOD) $(BBSERIAL_DTBO)
 
+# GPLAN build
 $(GPLAN_TARGET): $(GPLAN_MOD)
 	cp $< $@
 
@@ -61,12 +65,14 @@ $(GPLAN_MOD):
 	perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
 	CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
+# Firmware builds
 $(AVR_FIRMWARE):
 	$(MAKE) -C src/avr
 
 $(BBSERIAL_MOD) $(BBSERIAL_DTBO):
 	$(MAKE) -C src/bbserial
 
+# Package and deployment
 pkg: all
 	./setup.py sdist
 
@@ -79,43 +85,25 @@ install: pkg
 	cd dist && tar xf $(PKG_NAME).tar.bz2 && cd $(PKG_NAME) && \
 	sudo python3 setup.py install
 
-build/templates.pug: $(TEMPLS)
-	mkdir -p build
-	cat $(TEMPLS) >$@
-
-node_modules: package.json
-	npm install && touch node_modules
+# Web build targets
+$(TARGET_DIR)/%.html: src/pug/%.pug build/templates.pug
+	mkdir -p $(TARGET_DIR)
+	./node_modules/.bin/pug -O "{require: require}" $< -o $(TARGET_DIR)
 
 $(TARGET_DIR)/%: src/resources/%
-	install -D $< $@
+	mkdir -p $(TARGET_DIR)
+	cp $< $@
 
-src/svelte-components/dist/%:
-	cd src/svelte-components && rm -rf dist && npm run build
+build/templates.pug: $(TEMPLS)
+	mkdir -p build
+	echo "$(TEMPLS)" | tr ' ' '\n' | sed 's/.*\/\(.*\)\.pug/include \1/' > $@
 
-$(TARGET_DIR)/index.html: build/templates.pug
-$(TARGET_DIR)/index.html: $(wildcard src/static/js/*)
-$(TARGET_DIR)/index.html: $(wildcard src/static/css/*)
-$(TARGET_DIR)/index.html: $(wildcard src/pug/templates/*)
-$(TARGET_DIR)/index.html: $(wildcard src/js/*)
-$(TARGET_DIR)/index.html: $(wildcard src/stylus/*)
-$(TARGET_DIR)/index.html: src/resources/config-template.json
-$(TARGET_DIR)/index.html: $(wildcard src/resources/onefinity*defaults.json)
-$(TARGET_DIR)/index.html: $(wildcard src/svelte-components/dist/*)
-
-FORCE:
-
-$(TARGET_DIR)/%.html: src/pug/%.pug node_modules FORCE
-	cd src/svelte-components && rm -rf dist && npm run build
-	@mkdir -p $(TARGET_DIR)/svelte-components
-	@cp -r src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
-	@$(PUG) -O pug-opts.js -P $< -o $(TARGET_DIR) || (rm -f $@; exit 1)
-
+# NPM dependencies
 node_modules: package.json
 	npm cache clean --force && npm install --legacy-peer-deps && touch node_modules
 
+# Cleanup
 clean:
 	rm -rf $(GPLAN_TARGET) $(GPLAN_MOD) $(GPLAN_IMG) $(GPLAN_KPKG)
-	rm -rf dist build *.egg-info
+	rm -rf dist build *.egg-info node_modules $(TARGET_DIR)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB clean; done
-
-.PHONY: all install clean firmware modules pkg update
