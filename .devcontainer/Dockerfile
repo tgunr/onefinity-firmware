@@ -10,10 +10,14 @@ RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-
     echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until
 
-# Use Debian archive
+# Add Raspberry Pi repository key
+RUN curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg
+
+# Use Debian and Raspberry Pi archives
 RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list
+    echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
 
 # Install base packages
 RUN dpkg --add-architecture armhf && \
@@ -21,7 +25,11 @@ RUN dpkg --add-architecture armhf && \
     apt-get install -y --no-install-recommends \
     build-essential \
     crossbuild-essential-armhf \
-    linux-headers-armmp:armhf \
+    raspberrypi-kernel-headers \
+    device-tree-compiler \
+    flex \
+    bison \
+    bc \
     curl \
     git \
     gnupg \
@@ -86,7 +94,8 @@ ENV CC=arm-linux-gnueabihf-gcc \
     CXX=arm-linux-gnueabihf-g++ \
     AR=arm-linux-gnueabihf-ar \
     RANLIB=arm-linux-gnueabihf-ranlib \
-    LD=arm-linux-gnueabihf-ld
+    LD=arm-linux-gnueabihf-ld \
+    KERNEL_SRC=/usr/src/linux-headers-$(uname -r)
 
 # Switch to developer user
 USER developer
