@@ -31,11 +31,12 @@ ifndef PASSWORD
 PASSWORD=onefinity
 endif
 
-all: $(GPLAN_TARGET) $(AVR_FIRMWARE) $(BBSERIAL_MOD) $(BBSERIAL_DTBO) $(HTML) $(RESOURCES)
+all: $(GPLAN_TARGET) firmware modules $(HTML) $(RESOURCES)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
 
-pkg: all
-	./setup.py sdist
+firmware: $(AVR_FIRMWARE)
+
+modules: $(BBSERIAL_MOD) $(BBSERIAL_DTBO)
 
 $(GPLAN_TARGET): $(GPLAN_MOD)
 	cp $< $@
@@ -60,21 +61,23 @@ $(GPLAN_MOD):
 	perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
 	CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
-$(GPLAN_IMG):
-
-.PHONY: $(AVR_FIRMWARE)
 $(AVR_FIRMWARE):
 	$(MAKE) -C src/avr
 
-.PHONY: $(BBSERIAL_MOD) $(BBSERIAL_DTBO)
 $(BBSERIAL_MOD) $(BBSERIAL_DTBO):
 	$(MAKE) -C src/bbserial
+
+pkg: all
+	./setup.py sdist
 
 update: pkg
 	http_proxy= curl -i -X PUT -H "Content-Type: multipart/form-data" \
 	  -F "firmware=@dist/$(PKG_NAME).tar.bz2" -F "password=$(PASSWORD)" \
 	  http://$(HOST)/api/firmware/update
-	@-tput sgr0 && echo # Fix terminal output
+
+install: pkg
+	cd dist && tar xf $(PKG_NAME).tar.bz2 && cd $(PKG_NAME) && \
+	sudo python3 setup.py install
 
 build/templates.pug: $(TEMPLS)
 	mkdir -p build
@@ -112,10 +115,7 @@ node_modules: package.json
 
 clean:
 	rm -rf $(GPLAN_TARGET) $(GPLAN_MOD) $(GPLAN_IMG) $(GPLAN_KPKG)
-	$(MAKE) -C src/avr clean
-	$(MAKE) -C src/bbserial clean
-	@echo "The following files will be cleaned:"
-	@git clean -fd -n
-	rm -rf rpi-share
+	rm -rf dist build *.egg-info
+	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB clean; done
 
-.PHONY: all install clean tidy pkg gplan lint pylint jshint bbserial
+.PHONY: all install clean firmware modules pkg update
