@@ -1,3 +1,7 @@
+# Version and package info
+VERSION := $(shell sed -n 's/^.*"version": "\([^"]*\)",.*$$/\1/p' package.json)
+PKG_NAME := bbctrl-$(VERSION)
+
 # Build targets
 GPLAN_MOD := rpi-share/camotics/gplan.so
 GPLAN_TARGET := src/py/gplan.so
@@ -32,7 +36,11 @@ endif
 # Main targets
 all: $(GPLAN_TARGET) firmware modules web
 
-.PHONY: all clean firmware modules pkg update install web
+.PHONY: all clean firmware modules pkg update install web version
+
+version:
+	@echo "Version: $(VERSION)"
+	@echo "Package: $(PKG_NAME)"
 
 web: $(HTML) $(RESOURCES)
 
