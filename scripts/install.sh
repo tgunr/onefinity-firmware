@@ -64,6 +64,28 @@ if [ $? -ne 0 ]; then
     REBOOT=true
 fi
 
+# Install bbserial module
+if [ -f /lib/modules/bbserial/bbserial.ko ]; then
+    # Get kernel version
+    KERNEL_VER=$(uname -r)
+    
+    # Create module directory and copy module
+    mkdir -p /lib/modules/${KERNEL_VER}/kernel/drivers/tty/serial/
+    cp /lib/modules/bbserial/bbserial.ko /lib/modules/${KERNEL_VER}/kernel/drivers/tty/serial/
+    
+    # Run depmod to update module dependencies
+    depmod -a
+    
+    # Enable module in config.txt if not already enabled
+    grep "^dtoverlay=bbserial" /boot/config.txt >/dev/null
+    if [ $? -ne 0 ]; then
+        mount -o remount,rw /boot &&
+        echo "dtoverlay=bbserial" >> /boot/config.txt
+        mount -o remount,ro /boot
+        REBOOT=true
+    fi
+fi
+
 # Remove Hawkeye
 if [ -e /etc/init.d/hawkeye ]; then
     apt-get remove --purge -y hawkeye

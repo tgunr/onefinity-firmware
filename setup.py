@@ -36,5 +36,9 @@ setup(
         'scripts/browser',
         ],
     install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2'.split(),
+    data_files = [
+        ('lib/modules/bbserial', ['src/bbserial/bbserial.ko']),
+        ('boot/overlays', ['src/bbserial/overlays/bbserial.dtbo']),
+    ],
     zip_safe = False,
     )
