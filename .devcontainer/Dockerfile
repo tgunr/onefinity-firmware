@@ -95,7 +95,7 @@ ENV CC=arm-linux-gnueabihf-gcc \
     AR=arm-linux-gnueabihf-ar \
     RANLIB=arm-linux-gnueabihf-ranlib \
     LD=arm-linux-gnueabihf-ld \
-    KERNEL_SRC=/usr/src/linux-headers-$(uname -r)
+    KERNEL_SRC=/usr/src/raspberrypi-kernel-headers
 
 # Switch to developer user
 USER developer
