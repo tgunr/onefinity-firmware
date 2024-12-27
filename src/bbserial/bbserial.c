@@ -42,6 +42,30 @@
 #include <linux/interrupt.h>
 #include <linux/version.h>
 
+/* Function prototypes */
+static void _rx_chars(void);
+static void _tx_chars(void);
+static int _read_status(void);
+static void _write_status(int status);
+static struct ktermios *_get_term(void);
+static void _set_baud(speed_t baud);
+static int _set_term(struct ktermios *term);
+static void _flush_input(void);
+static void _flush_output(void);
+static irqreturn_t _interrupt(int irq, void *id);
+static void _enable_tx(void);
+static int _tx_enabled(void);
+static void _enable_rx(void);
+static int _rx_enabled(void);
+static int _dev_open(struct inode *inodep, struct file *filep);
+static ssize_t _dev_read(struct file *filep, char *buffer, size_t len, loff_t *offset);
+static ssize_t _dev_write(struct file *filep, const char *buffer, size_t len, loff_t *offset);
+static int _dev_release(struct inode *inodep, struct file *filep);
+static unsigned _dev_poll(struct file *file, poll_table *wait);
+static long _dev_ioctl(struct file *file, unsigned cmd, unsigned long arg);
+static int _probe(struct platform_device *dev);
+static int bbserial_remove(struct platform_device *dev);
+
 /* PL011 registers */
 #define UART01x_FR          0x18  /* Flag register */
 #define UART01x_FR_TXFF     0x20  /* Transmit FIFO full */
@@ -120,8 +144,8 @@
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("Joseph Coffland");
-MODULE_DESCRIPTION("Buildbotics controller serial port driver");
-MODULE_VERSION("0.3");
+MODULE_DESCRIPTION("BeagleBone Serial Port Driver");
+MODULE_VERSION("1.0");
 
 #define DEVICE_NAME "ttyAMA0"
 #define BUF_SIZE (1 << 16)
@@ -198,11 +222,13 @@ static void _write(unsigned val, unsigned reg)
 static void _tx_chars(void)
 {
   unsigned fill = RING_BUF_FILL(_port.tx_buf);
+  unsigned status;
 
   while (fill--)
   {
     // Check if UART FIFO full
-    if (_read(UART01x_FR) & UART01x_FR_TXFF)
+    status = _read(UART01x_FR);
+    if (status & UART01x_FR_TXFF)
       break;
 
     _write(RING_BUF_PEEK(_port.tx_buf), UART01x_DR);
@@ -221,16 +247,18 @@ static void _tx_chars(void)
 static void _rx_chars(void)
 {
   unsigned space = RING_BUF_SPACE(_port.rx_buf);
+  unsigned status;
+  unsigned ch;
 
   while (space--)
   {
     // Check if UART FIFO empty
-    unsigned status = _read(UART01x_FR);
+    status = _read(UART01x_FR);
     if (status & UART01x_FR_RXFE)
       break;
 
     // Read char from FIFO and update status
-    unsigned ch = _read(UART01x_DR);
+    ch = _read(UART01x_DR);
 
     // Record errors
     if (ch & UART011_DR_BE)
@@ -257,7 +285,6 @@ static void _rx_chars(void)
 static int _read_status(void)
 {
   int status = 0;
-
   unsigned fr = _read(UART01x_FR);
   unsigned cr = _read(UART011_CR);
 
@@ -290,9 +317,11 @@ static void _write_status(int status)
     printk(KERN_INFO "bbserial: _write_status() = %d\n", status);
 
   unsigned long flags;
+  unsigned cr;
+
   spin_lock_irqsave(&_port.lock, flags);
 
-  unsigned cr = _read(UART011_CR);
+  cr = _read(UART011_CR);
 
   // DTR (data terminal ready)
   if (status & TIOCM_DTR)
@@ -315,14 +344,16 @@ static struct ktermios *_get_term(void)
 {
   unsigned lcrh = _read(UART011_LCRH);
   unsigned cr = _read(UART011_CR);
+  unsigned brd;
+  speed_t baud;
+  unsigned cflag;
 
   // Baud rate
-  unsigned brd = _read(UART011_IBRD) << 6 | _read(UART011_FBRD);
-  speed_t baud = clk_get_rate(_port.clk) * 4 / brd;
+  brd = _read(UART011_IBRD) << 6 | _read(UART011_FBRD);
+  baud = clk_get_rate(_port.clk) * 4 / brd;
   tty_termios_encode_baud_rate(&_port.term, baud, baud);
 
   // Data bits
-  unsigned cflag;
   switch (lcrh & UART01x_LCRH_WLEN_bm)
   {
   case UART01x_LCRH_WLEN_5:
@@ -368,7 +399,9 @@ static void _set_baud(speed_t baud)
   if (debug)
     printk(KERN_INFO "bbserial: baud=%d\n", baud);
 
-  unsigned brd = clk_get_rate(_port.clk) * 16 / baud;
+  unsigned brd;
+
+  brd = clk_get_rate(_port.clk) * 16 / baud;
 
   if ((brd & 3) == 3)
     brd = (brd >> 2) + 1; // Round up
@@ -383,6 +416,8 @@ static int _set_term(struct ktermios *term)
 {
   unsigned lcrh = UART01x_LCRH_FEN; // Enable FIFOs
   unsigned cflag = term->c_cflag;
+  speed_t baud;
+  unsigned cr;
 
   // Data bits
   switch (cflag & CSIZE)
@@ -417,14 +452,14 @@ static int _set_term(struct ktermios *term)
   }
 
   // Get baud rate
-  speed_t baud = tty_termios_baud_rate(term);
+  baud = tty_termios_baud_rate(term);
 
   // Set
   unsigned long flags;
   spin_lock_irqsave(&_port.lock, flags);
 
   // Hardware flow control
-  unsigned cr = _read(UART011_CR);
+  cr = _read(UART011_CR);
   if (cflag & CRTSCTS)
     cr |= UART011_CR_CTSEN;
 
@@ -460,26 +495,25 @@ static void _flush_output(void)
 
 static irqreturn_t _interrupt(int irq, void *id)
 {
-  unsigned long flags;
-  spin_lock_irqsave(&_port.lock, flags);
+  unsigned status;
+  unsigned txSpace;
 
-  // Read and/or write
-  unsigned status = _read(UART011_MIS);
-  if (status & (UART011_RTIS | UART011_RXIS))
+  status = _read(UART011_MIS);
+
+  // RX interrupt
+  if (status & (UART011_RXIS | UART011_RTIS))
     _rx_chars();
+
+  // TX interrupt
   if (status & UART011_TXIS)
-    _tx_chars();
+  {
+    txSpace = RING_BUF_SPACE(_port.tx_buf);
+    if (txSpace)
+      _tx_chars();
+  }
 
-  unsigned txSpace = RING_BUF_SPACE(_port.tx_buf);
-  unsigned rxFill = RING_BUF_FILL(_port.rx_buf);
-
-  spin_unlock_irqrestore(&_port.lock, flags);
-
-  // Notify pollers
-  if (rxFill)
-    wake_up_interruptible_poll(&_port.read_wait, POLLIN);
-  if (txSpace)
-    wake_up_interruptible_poll(&_port.write_wait, POLLOUT);
+  // Clear interrupts
+  _write(status, UART011_ICR);
 
   return IRQ_HANDLED;
 }
@@ -525,42 +559,64 @@ static ssize_t _dev_read(struct file *filep, char *buffer, size_t len,
                          loff_t *offset)
 {
   if (debug)
-    printk(KERN_INFO "bbserial: read() len=%d overruns=%d\n", len,
+    printk(KERN_INFO "bbserial: read() len=%zu overruns=%d\n", len,
            _port.overruns);
 
   ssize_t bytes = 0;
+  unsigned fill = RING_BUF_FILL(_port.rx_buf);
+  unsigned long flags;
 
-  while (bytes < len && RING_BUF_FILL(_port.rx_buf))
+  if (fill)
   {
-    put_user(RING_BUF_PEEK(_port.rx_buf), buffer++);
-    RING_BUF_POP(_port.rx_buf);
-    bytes++;
-    if (!_rx_enabled())
+    if (len < fill)
+      fill = len;
+
+    spin_lock_irqsave(&_port.lock, flags);
+
+    while (fill--)
+    {
+      buffer[bytes++] = RING_BUF_PEEK(_port.rx_buf);
+      RING_BUF_POP(_port.rx_buf);
+    }
+
+    // Start RX interrupts when buffer is not full
+    if (RING_BUF_SPACE(_port.rx_buf))
       _enable_rx();
+
+    spin_unlock_irqrestore(&_port.lock, flags);
   }
 
-  return bytes ? bytes : -EAGAIN;
+  return bytes;
 }
 
 static ssize_t _dev_write(struct file *filep, const char *buffer, size_t len,
                           loff_t *offset)
 {
   if (debug)
-    printk(KERN_INFO "bbserial: write() len=%d tx=%d rx=%d\n",
+    printk(KERN_INFO "bbserial: write() len=%zu tx=%d rx=%d\n",
            len, RING_BUF_FILL(_port.tx_buf), RING_BUF_FILL(_port.rx_buf));
 
   ssize_t bytes = 0;
+  unsigned space = RING_BUF_SPACE(_port.tx_buf);
+  unsigned long flags;
 
-  while (bytes < len && RING_BUF_SPACE(_port.tx_buf))
+  if (space)
   {
-    get_user(RING_BUF_POKE(_port.tx_buf), buffer++);
-    RING_BUF_INC(_port.tx_buf, head);
-    bytes++;
-    if (!_tx_enabled())
-      _enable_tx();
+    if (len < space)
+      space = len;
+
+    spin_lock_irqsave(&_port.lock, flags);
+
+    while (space--)
+      RING_BUF_PUSH(_port.tx_buf, buffer[bytes++]);
+
+    // Start TX interrupts
+    _enable_tx();
+
+    spin_unlock_irqrestore(&_port.lock, flags);
   }
 
-  return bytes ? bytes : -EAGAIN;
+  return bytes;
 }
 
 static int _dev_release(struct inode *inodep, struct file *filep)
@@ -603,6 +659,7 @@ static long _dev_ioctl(struct file *file, unsigned cmd, unsigned long arg)
 
   int __user *ptr = (int __user *)arg;
   int status;
+  int ret = 0;
 
   switch (cmd)
   {
@@ -623,23 +680,31 @@ static long _dev_ioctl(struct file *file, unsigned cmd, unsigned long arg)
   }
 
   case TIOCMGET: // Get status of modem bits
-    put_user(_read_status(), ptr);
-    return 0;
+    status = _read_status();
+    if (put_user(status, ptr))
+      ret = -EFAULT;
+    break;
 
   case TIOCMSET: // Set status of modem bits
-    get_user(status, ptr);
-    _write_status(status);
-    return 0;
+    if (get_user(status, ptr))
+      ret = -EFAULT;
+    else
+      _write_status(status);
+    break;
 
   case TIOCMBIC: // Clear indicated modem bits
-    get_user(status, ptr);
-    _write_status(~status & _read_status());
-    return 0;
+    if (get_user(status, ptr))
+      ret = -EFAULT;
+    else
+      _write_status(~status & _read_status());
+    break;
 
   case TIOCMBIS: // Set indicated modem bits
-    get_user(status, ptr);
-    _write_status(status | _read_status());
-    return 0;
+    if (get_user(status, ptr))
+      ret = -EFAULT;
+    else
+      _write_status(status | _read_status());
+    break;
 
   case TCFLSH: // Flush
     if (arg == TCIFLUSH || arg == TCIOFLUSH)
@@ -657,7 +722,7 @@ static long _dev_ioctl(struct file *file, unsigned cmd, unsigned long arg)
     return -ENOIOCTLCMD;
   }
 
-  return 0;
+  return ret;
 }
 
 static struct file_operations _ops = {
@@ -700,61 +765,6 @@ static int _probe(struct platform_device *dev)
     return 0;
 }
 
-static int _remove(struct platform_device *dev)
-{
-    if (debug)
-        printk(KERN_INFO "bbserial: removing\n");
-
-    unsigned long flags;
-    spin_lock_irqsave(&_port.lock, flags);
-
-    // Mask and clear interrupts
-    _write(0, UART011_IMSC);
-    _write(0x7ff, UART011_ICR);
-
-    // Disable UART
-    _write(0, UART011_CR);
-
-    spin_unlock_irqrestore(&_port.lock, flags);
-
-    // Clean up IRQ
-    free_irq(_port.irq, &_port);
-
-    return 0;
-}
-
-static struct amba_id _ids[] = {
-  {
-    .id    = 0x00041011,
-    .mask  = 0x000fffff,
-    .data  = 0,
-  },
-  {0, 0},
-};
-
-MODULE_DEVICE_TABLE(amba, _ids);
-
-static struct platform_driver bbserial_driver = {
-    .probe = _probe,
-    .remove = _remove,
-    .driver = {
-        .name = "bbserial",
-        .owner = THIS_MODULE,
-    },
-};
-
-// Replace module init/exit functions
-static int __init bbserial_init(void)
-{
-    return platform_driver_register(&bbserial_driver);
-}
-
-static void __exit bbserial_exit(void)
-{
-    platform_driver_unregister(&bbserial_driver);
-    printk(KERN_INFO "bbserial: unloaded\n");
-}
-
 static int bbserial_remove(struct platform_device *dev)
 {
     device_destroy(_port.class, MKDEV(_port.major, 0));
@@ -771,5 +781,13 @@ static int bbserial_remove(struct platform_device *dev)
     return 0;
 }
 
-module_init(bbserial_init);
-module_exit(bbserial_exit);
+static struct platform_driver bbserial_driver = {
+    .probe = _probe,
+    .remove = bbserial_remove,
+    .driver = {
+        .name = "bbserial",
+        .owner = THIS_MODULE,
+    },
+};
+
+module_platform_driver(bbserial_driver);
