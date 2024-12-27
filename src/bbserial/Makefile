@@ -7,7 +7,7 @@ KBUILD_MODFILE := bbserial
 
 obj-m += bbserial.o
 
-KERNEL_SRC ?= /usr/src/linux-headers-6.1.21-v8+
+KERNEL_SRC := /usr/src/linux-headers-6.1.21-v8+
 ARCH ?= arm64
 CROSS_COMPILE ?= aarch64-linux-gnu-
 DTC ?= dtc
@@ -17,7 +17,7 @@ all: bbserial.ko overlays
 bbserial.ko:
 	$(MAKE) ARCH=$(ARCH) CROSS_COMPILE=$(CROSS_COMPILE) -C $(KERNEL_SRC) \
 		CONFIG_STACKPROTECTOR_PER_TASK=n \
-		KBUILD_MODFILE=bbserial \
+		KBUILD_MODNAME=bbserial \
 		M=$(DIR) modules
 
 overlays: $(DIR)/overlays/bbserial.dtbo

@@ -24,11 +24,15 @@ RUN echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspb
 
 # Install base packages
 RUN dpkg --add-architecture armhf && \
+    dpkg --add-architecture arm64 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     crossbuild-essential-armhf \
+    crossbuild-essential-arm64 \
     raspberrypi-kernel-headers \
+    linux-headers-arm64 \
+    linux-libc-dev:arm64 \
     device-tree-compiler \
     flex \
     bison \
