@@ -158,10 +158,12 @@ fi
 # Install bbctrl
 if $UPDATE_PY; then
     rm -rf /usr/local/lib/python*/dist-packages/bbctrl-*
+    # Install required Python packages
+    pip3 install tornado sockjs-tornado pyserial pyudev smbus2
     ./setup.py install --force
     service bbctrl restart
     HTTP_DIR=$(find /usr/local/lib/ -type d -name "http")
-    chmod 777 $HTTP_DIR
+    chmod 777 "$HTTP_DIR"
 fi
 
 # Expand the file system if necessary
