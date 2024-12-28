@@ -32,9 +32,9 @@
     },
     "containerUser": "developer",
     "remoteUser": "developer",
-    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace/onefinity-firmware,type=bind,Z",
-    "workspaceFolder": "/workspace/onefinity-firmware",
-    "customizations": {
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+    "workspaceFolder": "/workspace",
+      "customizations": {
         "vscode": {
             "extensions": [
                 "ms-azuretools.vscode-docker",
@@ -53,14 +53,15 @@
                 "mhutchie.git-graph",
                 "ms-vscode.cpptools-extension-pack",
                 "svelte.svelte-vscode",
-                "ms-vscode.makefile-tools"
+                "ms-vscode.makefile-tools",
+                "twxs.cmake"
             ]
         }
     },
     "mounts": [
-        "type=tmpfs,destination=/tmp",
-        "type=bind,source=/dev,target=/dev"
-    ],
+        "source=/dev,target=/dev,type=bind",
+        "source=${localWorkspaceFolder},target=/workspace/onefinity-firmware,type=bind"
+        ],
     "initializeCommand": "git config --global --add safe.directory ${localWorkspaceFolder}",
     "postCreateCommand": "git config --global --add safe.directory /workspaces/${localWorkspaceFolderBasename}"
 }
