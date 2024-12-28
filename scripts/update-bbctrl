@@ -1,27 +1,20 @@
-#!/bin/bash
+#!/bin/bash -x
 
-(
-    flock -n 9
+UPDATE_FILE="${1:-/var/lib/bbctrl/firmware/update.tar.bz2}"
+if [ -e "$UPDATE_FILE" ]; then
+  echo /usr/local/bin/update-from-file "$UPDATE_FILE"
+  exit $?
+fi
 
-    UPDATE=/var/lib/bbctrl/firmware/update.tar.bz2
+export UPDATE=/var/lib/bbctrl/firmware/update.tar.bz2
 
-    if [ ! -e "$UPDATE" ]; then
+if [ ! -e "$UPDATE" ]; then
       echo "Missing $UPDATE"
       exit 1
     fi
+    if [ -e "$UPDATE" ]; then
+      echo /usr/local/bin/update-from-file "$UPDATE"
+      exit $?
+    fi
+fi
 
-    systemctl stop bbctrl
-
-    rm -rf /tmp/update
-    mkdir /tmp/update
-    cd /tmp/update
-
-    LOG=/var/log/bbctrl.$(date +%Y%m%d-%H%M%S).install
-    tar xf "$UPDATE"
-    cd *
-    ./scripts/install.sh "$*" 2>&1 > $LOG
-
-    cd -
-    rm -rf /tmp/update $UPDATE
-
-) 9> /var/lock/bbctrl.update.lock
