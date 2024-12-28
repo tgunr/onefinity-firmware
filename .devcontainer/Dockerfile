@@ -51,6 +51,10 @@ RUN dpkg --add-architecture armhf && \
     binutils-avr \
     gcc-10-arm-linux-gnueabihf \
     g++-10-arm-linux-gnueabihf \
+    make \
+    cmake \
+    pkg-config \
+    libudev-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
@@ -62,15 +66,29 @@ RUN mkdir -p /etc/apt/keyrings && \
     rm -rf /var/lib/apt/lists/* && \
     rm -f /etc/apt/sources.list.d/nodesource.list
 
-# Install npm packages globally
+# Install Vite and TypeScript
 RUN npm install -g vite@4.5.1 typescript
 
-# Create non-root user
+# Install Python dependencies
+RUN pip3 install tornado
+
+# Set up cross-compilation environment variables
+ENV CC=arm-linux-gnueabihf-gcc-10 \
+    CXX=arm-linux-gnueabihf-g++-10 \
+    AR=arm-linux-gnueabihf-ar \
+    RANLIB=arm-linux-gnueabihf-ranlib \
+    LD=arm-linux-gnueabihf-ld \
+    STRIP=arm-linux-gnueabihf-strip \
+    KERNEL_SRC=/usr/src/linux-headers-rpi-v8
+
+# Create and configure user
 RUN useradd -m -s /bin/bash -G sudo developer && \
     echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
 
-# Set working directory for svelte components and create package.json
+# Set up Svelte components directory
 WORKDIR /workspace/onefinity-firmware/src/svelte-components
+
+# Create package.json for Svelte components
 RUN echo '{\n\
   "name": "svelte-components",\n\
   "private": true,\n\
@@ -90,26 +108,12 @@ RUN echo '{\n\
     "tslib": "^2.6.0",\n\
     "typescript": "^5.0.2",\n\
     "vite": "^4.4.5"\n\
-  }\n\
-}' > package.json
-
-# Install Python packages
-RUN pip3 install tornado
-
-# Set up cross-compilation environment variables
-ENV CC=arm-linux-gnueabihf-gcc-10 \
-    CXX=arm-linux-gnueabihf-g++-10 \
-    AR=arm-linux-gnueabihf-ar \
-    RANLIB=arm-linux-gnueabihf-ranlib \
-    LD=arm-linux-gnueabihf-ld \
-    STRIP=arm-linux-gnueabihf-strip \
-    KERNEL_SRC=/usr/src/linux-headers-rpi-v8
+  }\n}' > package.json
 
 # Switch to developer user
 USER developer
 
-# Reset working directory
+# Set final working directory
 WORKDIR /workspace/onefinity-firmware
 
-# Set default command
 CMD ["/bin/bash"]
