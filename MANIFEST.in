@@ -4,4 +4,6 @@ graft src/py/bbctrl/http
 graft src/py/camotics
 include src/avr/bbctrl-avr-firmware.hex
 include src/bbserial/bbserial.ko
+include src/py/camotics/gplan.so
+include src/py/camotics/__init__.py
 global-exclude .gitignore

@@ -2,8 +2,19 @@
 
 from setuptools import setup
 import json
+import os
 
 pkg = json.load(open('package.json', 'r'))
+
+# Get Python version
+import sysconfig
+python_version = sysconfig.get_python_version()
+
+# Determine site-packages directory
+if os.path.exists('/usr/local/lib/python3.5/dist-packages'):
+    site_packages = '/usr/local/lib/python3.5/dist-packages'
+else:
+    site_packages = f'/usr/local/lib/python{python_version}/site-packages'
 
 setup(
     name = pkg['name'],
@@ -17,11 +28,9 @@ setup(
     url = pkg['homepage'],
     package_dir = {'': 'src/py'},
     packages = ['bbctrl', 'inevent', 'lcd', 'camotics', 'iw_parse'],
-    data_files = [
-        ('lib/modules/bbserial', ['src/bbserial/bbserial.ko']),
-        ('boot/overlays', ['src/bbserial/overlays/bbserial.dtbo']),
-        ('lib/python3.5/dist-packages/camotics', ['src/py/camotics/gplan.so', 'src/py/camotics/__init__.py']),
-    ],
+    package_data={
+        'camotics': ['gplan.so', '__init__.py']
+    },
     include_package_data = True,
     entry_points = {
         'console_scripts': [
@@ -40,5 +49,10 @@ setup(
         'scripts/browser',
     ],
     install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2'.split(),
+    data_files = [
+        ('lib/modules/bbserial', ['src/bbserial/bbserial.ko']),
+        ('boot/overlays', ['src/bbserial/overlays/bbserial.dtbo']),
+        (os.path.join(site_packages, 'camotics'), ['src/py/camotics/gplan.so']),
+    ],
     zip_safe = False,
 )

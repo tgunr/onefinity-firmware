@@ -161,9 +161,18 @@ if $UPDATE_PY; then
     # Install required Python packages
     pip3 install tornado sockjs-tornado pyserial pyudev smbus2
     ./setup.py install --force
+    
+    # Manually install gplan.so
+    SITE_PACKAGES=$(python3 -c "from distutils.sysconfig import get_python_lib; print(get_python_lib())")
+    mkdir -p "$SITE_PACKAGES/camotics"
+    cp src/py/camotics/gplan.so "$SITE_PACKAGES/camotics/"
+    cp src/py/camotics/__init__.py "$SITE_PACKAGES/camotics/"
+    
     service bbctrl restart
     HTTP_DIR=$(find /usr/local/lib/ -type d -name "http")
-    chmod 777 "$HTTP_DIR"
+    if [ -n "$HTTP_DIR" ]; then
+        chmod 777 "$HTTP_DIR"
+    fi
 fi
 
 # Expand the file system if necessary
@@ -204,8 +213,8 @@ logrotate -f /etc/logrotate.conf
 sync
 
 if $REBOOT; then
-    echo "Rebooting"
-    reboot
+    echo "A reboot is required"
+    # reboot
 fi
 
 echo "Install complete"
