@@ -24,8 +24,12 @@ if $UPDATE_PY; then
 fi
 
 if $UPDATE_AVR; then
-    chmod +x ./scripts/avr109-flash.py
-    ./scripts/avr109-flash.py src/avr/bbctrl-avr-firmware.hex
+    if [ -e "/dev/ttyAMA0" ]; then
+        chmod +x ./scripts/avr109-flash.py
+        ./scripts/avr109-flash.py src/avr/bbctrl-avr-firmware.hex
+    else
+        echo "Skipping AVR update: /dev/ttyAMA0 not found"
+    fi
 fi
 
 # Update config.txt
@@ -109,11 +113,13 @@ if [ $? -ne 0 ]; then
   REBOOT=true
 fi
 
-# Increase swap
-grep 'CONF_SWAPSIZE=1000' /etc/dphys-swapfile >/dev/null
-if [ $? -ne 0 ]; then
-    sed -i 's/^CONF_SWAPSIZE=.*$/CONF_SWAPSIZE=1000/' /etc/dphys-swapfile
-    REBOOT=true
+# Fix swap
+if [ -f "/etc/dphys-swapfile" ]; then
+    grep "CONF_SWAPSIZE=" /etc/dphys-swapfile >/dev/null
+    if [ $? -ne 0 ]; then
+        echo "CONF_SWAPSIZE=1024" >> /etc/dphys-swapfile
+        sed -i 's/^CONF_SWAPSIZE=.*$/CONF_SWAPSIZE=1024/g' /etc/dphys-swapfile
+    fi
 fi
 
 # Install .Xresources & .xinitrc
