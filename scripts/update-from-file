@@ -44,8 +44,11 @@
         touch /etc/dphys-swapfile
     fi
     
+    # Install Python package first
+    python3 setup.py install > "$LOG" 2>&1
+    
     # Run install without AVR update since we don't have the serial port
-    ./scripts/install.sh --no-avr 2>&1 > "$LOG"
+    ./scripts/install.sh --no-avr >> "$LOG" 2>&1
 
     cd -
     rm -rf /tmp/update "$FILE"
