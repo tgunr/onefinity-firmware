@@ -5,7 +5,6 @@ import json
 
 pkg = json.load(open('package.json', 'r'))
 
-
 setup(
     name = pkg['name'],
     version = pkg['version'],
@@ -17,13 +16,18 @@ setup(
     license = pkg['license'],
     url = pkg['homepage'],
     package_dir = {'': 'src/py'},
-    packages = ['bbctrl', 'inevent', 'lcd', 'camotics','iw_parse'],
+    packages = ['bbctrl', 'inevent', 'lcd', 'camotics', 'iw_parse'],
+    data_files = [
+        ('lib/modules/bbserial', ['src/bbserial/bbserial.ko']),
+        ('boot/overlays', ['src/bbserial/overlays/bbserial.dtbo']),
+        ('lib/python3.5/dist-packages/camotics', ['src/py/camotics/gplan.so', 'src/py/camotics/__init__.py']),
+    ],
     include_package_data = True,
     entry_points = {
         'console_scripts': [
             'bbctrl = bbctrl:run'
-            ]
-        },
+        ]
+    },
     scripts = [
         'scripts/update-bbctrl',
         'scripts/upgrade-bbctrl',
@@ -34,11 +38,7 @@ setup(
         'scripts/edit-config',
         'scripts/edit-boot-config',
         'scripts/browser',
-        ],
-    install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2'.split(),
-    data_files = [
-        ('lib/modules/bbserial', ['src/bbserial/bbserial.ko']),
-        ('boot/overlays', ['src/bbserial/overlays/bbserial.dtbo']),
     ],
+    install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2'.split(),
     zip_safe = False,
-    )
+)
