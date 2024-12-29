@@ -2,7 +2,7 @@
 
 UPDATE_FILE="${1:-/var/lib/bbctrl/firmware/update.tar.bz2}"
 if [ -e "$UPDATE_FILE" ]; then
-  echo /usr/local/bin/update-from-file "$UPDATE_FILE"
+  /usr/local/bin/update-from-file "$UPDATE_FILE"
   exit $?
 fi
 
@@ -13,7 +13,7 @@ if [ ! -e "$UPDATE" ]; then
       exit 1
     fi
     if [ -e "$UPDATE" ]; then
-      echo /usr/local/bin/update-from-file "$UPDATE"
+      /usr/local/bin/update-from-file "$UPDATE"
       exit $?
     fi
 fi
