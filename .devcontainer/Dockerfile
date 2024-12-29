@@ -1,13 +1,13 @@
-FROM arm64v8/debian:bullseye
+FROM arm32v7/debian:bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Configure APT
+# Configure apt
 RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
     echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until
 
-# Add initial repositories and install curl and gpg
+# Configure sources
 RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
     echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
@@ -15,16 +15,14 @@ RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main co
     apt-get install -y curl gnupg && \
     rm -rf /var/lib/apt/lists/*
 
-# Create keyrings directory and add Raspberry Pi repository key
+# Add Raspberry Pi repository
 RUN mkdir -p /etc/apt/keyrings && \
     curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg
 
-# Add Raspberry Pi repository
 RUN echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
 
 # Install base packages and cross-compilation tools
 RUN dpkg --add-architecture armhf && \
-    dpkg --add-architecture arm64 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -46,15 +44,14 @@ RUN dpkg --add-architecture armhf && \
     gcc-avr \
     avr-libc \
     binutils-avr \
-    gcc-10-arm-linux-gnueabihf \
-    g++-10-arm-linux-gnueabihf \
+    gcc-arm-linux-gnueabihf \
+    g++-arm-linux-gnueabihf \
     make \
     cmake \
     pkg-config \
     libudev-dev \
     libyaml-dev:armhf \
     zlib1g-dev:armhf \
-    libv8-dev:armhf \
     libboost-dev:armhf \
     libboost-system-dev:armhf \
     libboost-filesystem-dev:armhf \
@@ -75,6 +72,25 @@ RUN npm install -g vite@4.5.1 typescript
 
 # Install Python dependencies
 RUN pip3 install tornado
+
+# Set up cross-compilation environment
+ENV CC=arm-linux-gnueabihf-gcc \
+    CXX=arm-linux-gnueabihf-g++ \
+    AR=arm-linux-gnueabihf-ar \
+    RANLIB=arm-linux-gnueabihf-ranlib \
+    LD=arm-linux-gnueabihf-ld \
+    STRIP=arm-linux-gnueabihf-strip \
+    CFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC" \
+    CXXFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC" \
+    LDFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard" \
+    KERNEL_SRC=/usr/src/linux-headers-rpi-v8
+
+# Create and configure user
+RUN useradd -m -s /bin/bash bbmc && \
+    echo "bbmc ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+
+USER bbmc
+WORKDIR /home/bbmc
 
 # Build gplan.so
 WORKDIR /workspace/onefinity-firmware
@@ -104,19 +120,6 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
     SQLITE_CFLAGS='-O1 -m32' \
     scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
-# Set up cross-compilation environment variables
-ENV CC=arm-linux-gnueabihf-gcc-10 \
-    CXX=arm-linux-gnueabihf-g++-10 \
-    AR=arm-linux-gnueabihf-ar \
-    RANLIB=arm-linux-gnueabihf-ranlib \
-    LD=arm-linux-gnueabihf-ld \
-    STRIP=arm-linux-gnueabihf-strip \
-    KERNEL_SRC=/usr/src/linux-headers-rpi-v8
-
-# Create and configure user
-RUN useradd -m -s /bin/bash -G sudo developer && \
-    echo "developer ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
-
 # Set up Svelte components directory
 WORKDIR /workspace/onefinity-firmware/src/svelte-components
 
@@ -143,7 +146,7 @@ RUN echo '{\n\
   }\n}' > package.json
 
 # Switch to developer user
-USER developer
+USER bbmc
 
 # Set final working directory
 WORKDIR /workspace/onefinity-firmware
@@ -171,13 +174,13 @@ RUN sudo apt-get update && \
     && sudo rm -rf /var/lib/apt/lists/*
 
 # Initialize git repos
-RUN sudo mkdir -p /cbang && sudo chown developer:developer /cbang && \
+RUN sudo mkdir -p /cbang && sudo chown bbmc:bbmc /cbang && \
     git init /cbang && cd /cbang && \
     git remote add origin https://github.com/CauldronDevelopmentLLC/cbang.git && \
     git fetch origin 18f1e963107ef26abe750c023355a5c40dd07853 && \
     git reset --hard FETCH_HEAD
 
-RUN sudo mkdir -p /camotics && sudo chown developer:developer /camotics && \
+RUN sudo mkdir -p /camotics && sudo chown bbmc:bbmc /camotics && \
     git init /camotics && cd /camotics && \
     git remote add origin https://github.com/CauldronDevelopmentLLC/camotics.git && \
     git fetch origin ec876c80d20fc19837133087cef0c447df5a939d && \
@@ -188,14 +191,14 @@ WORKDIR /cbang
 RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
     CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
     SQLITE_CFLAGS='-O1 -m32' \
-    scons -j1 disable_local="re2 libevent"
+    scons -j1 disable_local="re2 libevent v8" with_v8=0 with_js=0
 
 # Build gplan for ARM
 WORKDIR /camotics
 ENV CBANG_HOME="/cbang"
 ENV LC_ALL=C
 RUN sudo mkdir -p build && \
-    sudo chown -R developer:developer build && \
+    sudo chown -R bbmc:bbmc build && \
     touch build/version.txt && \
     perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
@@ -211,6 +214,6 @@ RUN sudo mkdir -p build && \
 # Copy gplan.so to the src directory
 RUN sudo mkdir -p /workspace/src/py/camotics && \
     sudo cp build/gplan.so /workspace/src/py/camotics/ && \
-    sudo chown -R developer:developer /workspace/src/py/camotics
+    sudo chown -R bbmc:bbmc /workspace/src/py/camotics
 
 CMD ["/bin/bash"]
