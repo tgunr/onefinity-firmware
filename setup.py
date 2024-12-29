@@ -14,7 +14,7 @@ python_version = sysconfig.get_python_version()
 if os.path.exists('/usr/local/lib/python3.5/dist-packages'):
     site_packages = '/usr/local/lib/python3.5/dist-packages'
 else:
-    site_packages = f'/usr/local/lib/python{python_version}/site-packages'
+    site_packages = '/usr/local/lib/python{}/site-packages'.format(python_version)
 
 setup(
     name = pkg['name'],

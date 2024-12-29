@@ -22,17 +22,14 @@ RUN mkdir -p /etc/apt/keyrings && \
 # Add Raspberry Pi repository
 RUN echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
 
-# Install base packages
+# Install base packages and cross-compilation tools
 RUN dpkg --add-architecture armhf && \
     dpkg --add-architecture arm64 && \
     apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
     crossbuild-essential-armhf \
-    crossbuild-essential-arm64 \
     raspberrypi-kernel-headers \
-    linux-headers-arm64 \
-    linux-libc-dev:arm64 \
     device-tree-compiler \
     flex \
     bison \
@@ -55,6 +52,13 @@ RUN dpkg --add-architecture armhf && \
     cmake \
     pkg-config \
     libudev-dev \
+    libyaml-dev:armhf \
+    zlib1g-dev:armhf \
+    libv8-dev:armhf \
+    libboost-dev:armhf \
+    libboost-system-dev:armhf \
+    libboost-filesystem-dev:armhf \
+    libboost-regex-dev:armhf \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Node.js
@@ -84,7 +88,10 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
     git -C rpi-share/camotics fetch --depth 1 origin ec876c80d20fc19837133087cef0c447df5a939d && \
     git -C rpi-share/camotics reset --hard FETCH_HEAD && \
     cd rpi-share && \
-    CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C cbang disable_local="re2 libevent" && \
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    SQLITE_CFLAGS='-O1' \
+    scons -j1 -C cbang disable_local="re2 libevent" && \
     export CBANG_HOME="/workspace/onefinity-firmware/rpi-share/cbang" && \
     export LC_ALL=C && \
     mkdir -p camotics/build && \
@@ -92,7 +99,10 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
     perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
-    CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    SQLITE_CFLAGS='-O1' \
+    scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
 # Set up cross-compilation environment variables
 ENV CC=arm-linux-gnueabihf-gcc-10 \
@@ -137,5 +147,70 @@ USER developer
 
 # Set final working directory
 WORKDIR /workspace/onefinity-firmware
+
+# Cross-compile for 32-bit ARM
+RUN sudo apt-get update && \
+    sudo apt-get install -y \
+    build-essential \
+    python3 \
+    python3-pip \
+    python3-setuptools \
+    python3-wheel \
+    python3-dev \
+    git \
+    scons \
+    crossbuild-essential-armhf \
+    libyaml-dev:armhf \
+    libssl-dev:armhf \
+    zlib1g-dev:armhf \
+    libv8-dev:armhf \
+    libboost-dev:armhf \
+    libboost-system-dev:armhf \
+    libboost-filesystem-dev:armhf \
+    libboost-regex-dev:armhf \
+    && sudo rm -rf /var/lib/apt/lists/*
+
+# Initialize git repos
+RUN sudo mkdir -p /cbang && sudo chown developer:developer /cbang && \
+    git init /cbang && cd /cbang && \
+    git remote add origin https://github.com/CauldronDevelopmentLLC/cbang.git && \
+    git fetch origin 18f1e963107ef26abe750c023355a5c40dd07853 && \
+    git reset --hard FETCH_HEAD
+
+RUN sudo mkdir -p /camotics && sudo chown developer:developer /camotics && \
+    git init /camotics && cd /camotics && \
+    git remote add origin https://github.com/CauldronDevelopmentLLC/camotics.git && \
+    git fetch origin ec876c80d20fc19837133087cef0c447df5a939d && \
+    git reset --hard FETCH_HEAD
+
+# Build cbang for ARM
+WORKDIR /cbang
+RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    SQLITE_CFLAGS='-O1' \
+    scons -j1 disable_local="re2 libevent"
+
+# Build gplan for ARM
+WORKDIR /camotics
+ENV CBANG_HOME="/cbang"
+ENV LC_ALL=C
+RUN sudo mkdir -p build && \
+    sudo chown -R developer:developer build && \
+    touch build/version.txt && \
+    perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
+    perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
+    perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
+    SQLITE_CFLAGS='-O1' \
+    scons -j1 gplan.so with_gui=0 with_tpl=0 && \
+    cp gplan.so build/ && \
+    ls -la gplan.so && \
+    ls -la build/gplan.so
+
+# Copy gplan.so to the src directory
+RUN sudo mkdir -p /workspace/src/py/camotics && \
+    sudo cp build/gplan.so /workspace/src/py/camotics/ && \
+    sudo chown -R developer:developer /workspace/src/py/camotics
 
 CMD ["/bin/bash"]
