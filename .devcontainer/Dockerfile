@@ -88,9 +88,9 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
     git -C rpi-share/camotics fetch --depth 1 origin ec876c80d20fc19837133087cef0c447df5a939d && \
     git -C rpi-share/camotics reset --hard FETCH_HEAD && \
     cd rpi-share && \
-    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    SQLITE_CFLAGS='-O1' \
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    SQLITE_CFLAGS='-O1 -m32' \
     scons -j1 -C cbang disable_local="re2 libevent" && \
     export CBANG_HOME="/workspace/onefinity-firmware/rpi-share/cbang" && \
     export LC_ALL=C && \
@@ -99,9 +99,9 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
     perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
-    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    SQLITE_CFLAGS='-O1' \
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    SQLITE_CFLAGS='-O1 -m32' \
     scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
 
 # Set up cross-compilation environment variables
@@ -185,9 +185,9 @@ RUN sudo mkdir -p /camotics && sudo chown developer:developer /camotics && \
 
 # Build cbang for ARM
 WORKDIR /cbang
-RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    SQLITE_CFLAGS='-O1' \
+RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    SQLITE_CFLAGS='-O1 -m32' \
     scons -j1 disable_local="re2 libevent"
 
 # Build gplan for ARM
@@ -200,9 +200,9 @@ RUN sudo mkdir -p build && \
     perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
-    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard' \
-    SQLITE_CFLAGS='-O1' \
+    CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+    SQLITE_CFLAGS='-O1 -m32' \
     scons -j1 gplan.so with_gui=0 with_tpl=0 && \
     cp gplan.so build/ && \
     ls -la gplan.so && \
