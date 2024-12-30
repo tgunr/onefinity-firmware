@@ -166,7 +166,6 @@ RUN sudo apt-get update && \
     libyaml-dev:armhf \
     libssl-dev:armhf \
     zlib1g-dev:armhf \
-    libv8-dev:armhf \
     libboost-dev:armhf \
     libboost-system-dev:armhf \
     libboost-filesystem-dev:armhf \
@@ -191,7 +190,7 @@ WORKDIR /cbang
 RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
     CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
     SQLITE_CFLAGS='-O1 -m32' \
-    scons -j1 disable_local="re2 libevent v8" with_v8=0 with_js=0 with_local_v8=0 without_v8=1
+    scons -j1 disable_local="re2 libevent v8" with_v8=0 with_js=0 with_local_v8=0 without_v8=1 without_local_v8=1 without_local_js=1 with_local_js=0 disable_js=1 disable_v8=1
 
 # Build gplan for ARM
 WORKDIR /camotics
