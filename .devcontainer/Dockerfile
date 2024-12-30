@@ -216,4 +216,12 @@ RUN sudo mkdir -p /workspace/src/py/camotics && \
     sudo cp build/gplan.so /workspace/src/py/camotics/ && \
     sudo chown -R bbmc:bbmc /workspace/src/py/camotics
 
+# Set the working directory for the build
+WORKDIR /workspace/onefinity-firmware
+
+# Copy the Makefile and other necessary files
+COPY Makefile .
+COPY package.json .
+COPY src/ ./src/
+
 CMD ["/bin/bash"]
