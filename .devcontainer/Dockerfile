@@ -80,9 +80,9 @@ ENV CC=arm-linux-gnueabihf-gcc \
     RANLIB=arm-linux-gnueabihf-ranlib \
     LD=arm-linux-gnueabihf-ld \
     STRIP=arm-linux-gnueabihf-strip \
-    CFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC" \
-    CXXFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC" \
-    LDFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard" \
+    CFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC -m32" \
+    CXXFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -fPIC -m32" \
+    LDFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32" \
     KERNEL_SRC=/usr/src/linux-headers-rpi-v8
 
 # Create and configure user
@@ -187,9 +187,10 @@ RUN sudo mkdir -p /camotics && sudo chown bbmc:bbmc /camotics && \
 
 # Build cbang for ARM
 WORKDIR /cbang
-RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
-    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
+RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32 -fPIC' \
+    CXXFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32 -fPIC' \
     SQLITE_CFLAGS='-O1 -m32' \
+    LDFLAGS='-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32' \
     scons -j1 disable_local="re2 libevent v8" with_v8=0 with_js=0 with_local_v8=0 without_v8=1 without_local_v8=1 without_local_js=1 with_local_js=0 disable_js=1 disable_v8=1
 
 # Build gplan for ARM
