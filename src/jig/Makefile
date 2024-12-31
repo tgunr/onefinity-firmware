@@ -118,7 +118,7 @@ usersig:
 
 # Clean
 tidy:
-	rm -f $(shell find -name \*~ -o -name \#\*)
+	rm -f $(shell find . -name \*~ -o -name \#\*)
 
 clean: tidy
 	rm -rf $(PROJECT).elf $(PROJECT).hex $(PROJECT).eep $(PROJECT).lss \
