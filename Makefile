@@ -24,19 +24,26 @@ TEMPLS := $(wildcard src/pug/templates/*.pug)
 # Subprojects
 SUBPROJECTS := avr boot pwr jig bbserial
 
+ifeq ($(shell uname), Darwin)
+	MAKE=/opt/homebrew/opt/make/libexec/gnubin/make
+endif
+
 # Configuration
 ifndef HOST
 HOST=onefinity.local
 endif
 
 ifndef PASSWORD
-PASSWORD=onefinity
+PASSWORD=pmn2213
 endif
 
 # Main targets
 all: $(GPLAN_TARGET) firmware modules web
 
-.PHONY: all clean firmware modules pkg update install web version
+# .PHONY means that the targets are not files to be generated, but rather just labels
+# to be used to group dependencies. This is useful for abstract targets like "all"
+# and "clean", which aren't actual files.
+.PHONY: all clean firmware modules pkg update install install-ssh web version kernel-headers
 
 version:
 	@echo "Version: $(VERSION)"
@@ -71,7 +78,7 @@ $(GPLAN_MOD):
 	perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
 	perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
 	perl -i -0pe 's/(fabs\((config\.maxAccel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' camotics/src/gcode/plan/LineCommand.cpp camotics/src/gcode/plan/LinePlanner.cpp && \
-	CFLAGS='-Os' CXXFLAGS='-Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0
+	CFLAGS='-m32 -Os' CXXFLAGS='-m32 -Os' SQLITE_CFLAGS='-O1' scons -j1 -C camotics gplan.so with_gui=0 with_tpl=0 arch=x86
 
 # Firmware builds
 $(AVR_FIRMWARE):
@@ -92,6 +99,13 @@ update: pkg
 install: pkg
 	cd dist && tar xf $(PKG_NAME).tar.bz2 && cd $(PKG_NAME) && \
 	sudo python3 setup.py install
+
+install-ssh: pkg
+	scp dist/$(PKG_NAME).tar.bz2 root@$(HOST):/var/lib/bbctrl/firmware/update.tar.bz2
+	ssh root@$(HOST) /usr/local/bin/update-bbctrl
+
+kernel-headers:
+	$(MAKE) -C src/bbserial/linux-rpi-raspberrypi-kernel_1.20171029-1 ARCH=arm CROSS_COMPILE=arm-linux-gnueabihf- INSTALL_HEADER_PATH=~/Work/OneFinity/onefinity-firmware/src/kernel/headers headers_install 
 
 # Web build targets
 $(TARGET_DIR)/%.html: src/pug/%.pug build/templates.pug
@@ -114,4 +128,8 @@ node_modules: package.json
 clean:
 	rm -rf $(GPLAN_TARGET) $(GPLAN_MOD) $(GPLAN_IMG) $(GPLAN_KPKG)
 	rm -rf dist build *.egg-info node_modules $(TARGET_DIR)
-	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB clean; done
+	@for SUB in $(SUBPROJECTS); do \
+		echo "Cleaning src/$$SUB"; \
+		$(MAKE) -C src/$$SUB clean; \
+	done
+
