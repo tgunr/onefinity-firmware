@@ -152,8 +152,18 @@ USER bbmc
 WORKDIR /workspace/onefinity-firmware
 
 # Cross-compile for 32-bit ARM
-RUN sudo apt-get update && \
-    sudo apt-get install -y \
+WORKDIR /workspace/onefinity-firmware
+
+# Cross-compile for 32-bit ARM
+RUN mkdir -p /var/lib/apt/lists/partial && \
+    apt-get update && \
+    apt-get install -y software-properties-common && \
+    echo "deb http://deb.debian.org/debian bullseye main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
+    apt-get update && \
+    apt-get install -y qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev && \
+    apt-get install -y \
     build-essential \
     python3 \
     python3-pip \
@@ -169,17 +179,17 @@ RUN sudo apt-get update && \
     libboost-dev:armhf \
     libboost-system-dev:armhf \
     libboost-filesystem-dev:armhf \
-    libboost-regex-dev:armhf \
-    && sudo rm -rf /var/lib/apt/lists/*
-
+    libboost-regex-dev:armhf && \
+    rm -rf /var/lib/apt/lists/*
+    
 # Initialize git repos
-RUN sudo mkdir -p /cbang && sudo chown bbmc:bbmc /cbang && \
+RUN mkdir -p /cbang && chown bbmc:bbmc /cbang && \
     git init /cbang && cd /cbang && \
     git remote add origin https://github.com/CauldronDevelopmentLLC/cbang.git && \
     git fetch origin 18f1e963107ef26abe750c023355a5c40dd07853 && \
     git reset --hard FETCH_HEAD
 
-RUN sudo mkdir -p /camotics && sudo chown bbmc:bbmc /camotics && \
+RUN mkdir -p /camotics && chown bbmc:bbmc /camotics && \
     git init /camotics && cd /camotics && \
     git remote add origin https://github.com/CauldronDevelopmentLLC/camotics.git && \
     git fetch origin ec876c80d20fc19837133087cef0c447df5a939d && \
@@ -197,8 +207,8 @@ RUN CFLAGS='-Os -march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -m32 -fPIC' \
 WORKDIR /camotics
 ENV CBANG_HOME="/cbang"
 ENV LC_ALL=C
-RUN sudo mkdir -p build && \
-    sudo chown -R bbmc:bbmc build && \
+RUN mkdir -p build && \
+    chown -R bbmc:bbmc build && \
     touch build/version.txt && \
     perl -i -0pe 's/(fabs\((config\.maxVel\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
     perl -i -0pe 's/(fabs\((config\.maxJerk\[axis\]) \/ unit\[axis\]\));/std::min(\2, \1);/gm' src/gcode/plan/LineCommand.cpp src/gcode/plan/LinePlanner.cpp && \
@@ -212,9 +222,9 @@ RUN sudo mkdir -p build && \
     ls -la build/gplan.so
 
 # Copy gplan.so to the src directory
-RUN sudo mkdir -p /workspace/src/py/camotics && \
-    sudo cp build/gplan.so /workspace/src/py/camotics/ && \
-    sudo chown -R bbmc:bbmc /workspace/src/py/camotics
+RUN mkdir -p /workspace/src/py/camotics && \
+    cp build/gplan.so /workspace/src/py/camotics/ && \
+    chown -R bbmc:bbmc /workspace/src/py/camotics
 
 # Set the working directory for the build
 WORKDIR /workspace/onefinity-firmware
