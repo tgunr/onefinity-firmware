@@ -152,9 +152,6 @@ USER bbmc
 WORKDIR /workspace/onefinity-firmware
 
 # Cross-compile for 32-bit ARM
-WORKDIR /workspace/onefinity-firmware
-
-# Cross-compile for 32-bit ARM
 RUN mkdir -p /var/lib/apt/lists/partial && \
     apt-get update && \
     apt-get install -y software-properties-common && \
