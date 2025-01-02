@@ -48,6 +48,7 @@ check-deps:
 	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
 	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
 	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
+	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
 
 # Clone and prepare dependencies
 prepare-deps:
@@ -62,13 +63,14 @@ prepare-deps:
 		rm -rf rpi-share/camotics; \
 		git clone -b v1.2.0 https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
 	fi
-	# Fix Python 2/3 compatibility issue in cbang
+	# Fix Python 2 compatibility issue in cbang
 	@echo "Patching cbang for Python 2 compatibility..."
-	@sed -i '1i import string' rpi-share/cbang/config/pkg/__init__.py
-	@sed -i 's/xml_escape_table = str\.maketrans({/xml_escape_table = {/g' rpi-share/cbang/config/pkg/__init__.py
-	@sed -i 's/})/}/' rpi-share/cbang/config/pkg/__init__.py
-	@sed -i 's/str\.translate(xml_escape_table)/reduce(lambda s, k: s.replace(k, xml_escape_table[k]), xml_escape_table.keys(), str)/g' rpi-share/cbang/config/pkg/__init__.py
-	@sed -i '1i from functools import reduce' rpi-share/cbang/config/pkg/__init__.py
+	@if ! grep -q "def xml_escape_table()" rpi-share/cbang/config/pkg/__init__.py; then \
+		sed -i '1i from functools import reduce' rpi-share/cbang/config/pkg/__init__.py; \
+		sed -i '1i import string' rpi-share/cbang/config/pkg/__init__.py; \
+		sed -i '/^xml_escape_table =/,/^})/c\def xml_escape_table():\n    return {\n        "&": "&amp;",\n        "<": "&lt;",\n        ">": "&gt;",\n        "\\\"": "&quot;",\n        "\\x27": "&apos;"\n    }' rpi-share/cbang/config/pkg/__init__.py; \
+		sed -i 's/str\.translate(xml_escape_table)/reduce(lambda s, k: s.replace(k, xml_escape_table()[k]), xml_escape_table().keys(), str)/g' rpi-share/cbang/config/pkg/__init__.py; \
+	fi
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
