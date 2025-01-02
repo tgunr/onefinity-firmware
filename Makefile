@@ -62,8 +62,12 @@ prepare-deps:
 		git clone -b v1.2.0 https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
 	fi
 	# Fix Python 2/3 compatibility issue in cbang
-	@sed -i 's/str\.maketrans/string.maketrans/g' rpi-share/cbang/config/pkg/__init__.py
+	@echo "Patching cbang for Python 2 compatibility..."
 	@sed -i '1i import string' rpi-share/cbang/config/pkg/__init__.py
+	@sed -i 's/xml_escape_table = str\.maketrans({/xml_escape_table = {/g' rpi-share/cbang/config/pkg/__init__.py
+	@sed -i 's/})/}/' rpi-share/cbang/config/pkg/__init__.py
+	@sed -i 's/str\.translate(xml_escape_table)/reduce(lambda s, k: s.replace(k, xml_escape_table[k]), xml_escape_table.keys(), str)/g' rpi-share/cbang/config/pkg/__init__.py
+	@sed -i '1i from functools import reduce' rpi-share/cbang/config/pkg/__init__.py
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
