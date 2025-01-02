@@ -53,25 +53,29 @@ check-deps:
 # Clone and prepare dependencies
 prepare-deps:
 	@echo "Checking dependency repositories..."
+	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
+		echo "Cloning camotics..."; \
+		rm -rf rpi-share/camotics; \
+		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+		cd rpi-share/camotics && git checkout v1.2.0; \
+		echo "Creating minimal SConstruct..."; \
+		echo 'import os' > SConstruct; \
+		echo 'env = Environment()' >> SConstruct; \
+		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct; \
+		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct; \
+		echo 'env.SharedLibrary("gplan", Glob("src/gcode/*.cpp"))' >> SConstruct; \
+	fi
 	@if [ ! -f rpi-share/cbang/SConstruct ]; then \
 		echo "Cloning cbang..."; \
 		rm -rf rpi-share/cbang; \
 		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
 		cd rpi-share/cbang && git checkout v1.0.0; \
 	fi
-	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
-		echo "Cloning camotics..."; \
-		rm -rf rpi-share/camotics; \
-		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout v1.2.0; \
-		echo "Patching camotics SConstruct..."; \
-		sed -i 's/env.Tool('\''config'\''/env.Tool('\''default'\''/g' SConstruct; \
-	fi
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	cd rpi-share/camotics && scons -j 8 gplan.so with_gui=0 with_tpl=0 strict=0 with_local=1 disable_local=re2
-	cp rpi-share/camotics/build/gplan.so src/py/camotics/
+	cd rpi-share/camotics && scons -j 8 gplan.so
+	cp rpi-share/camotics/gplan.so src/py/camotics/
 
 pkg: gplan
 	python3 setup.py bdist_deb
