@@ -104,7 +104,7 @@ $(SVELTE_DIST): $(SVELTE_SOURCES) src/svelte-components/package.json src/svelte-
 
 .PHONY: $(AVR_FIRMWARE)
 $(AVR_FIRMWARE):
-	$(MAKE) -C src/avr
+	$(MAKE) -C src/avr 
 
 update: pkg
 	http_proxy= curl -i -X PUT -H "Content-Type: multipart/form-data" \
