@@ -84,7 +84,7 @@ $(TARGET_DIR)/%: src/resources/%
 	install -D $< $@
 
 src/svelte-components/dist/%:
-	cd src/svelte-components && rm -rf dist && npm run build
+	cd src/svelte-components && [ -d dist ] || npm run build
 
 $(TARGET_DIR)/index.html: build/templates.pug
 $(TARGET_DIR)/index.html: $(wildcard src/static/js/*)
