@@ -42,11 +42,12 @@ all: $(HTML) $(RESOURCES)
 # Check for required build tools and install if missing
 check-deps:
 	@echo "Checking build dependencies..."
-	@which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons)
+	@which python3 > /dev/null || (echo "Installing python3..." && apt-get install -y python3)
+	@which python3-pip > /dev/null || (echo "Installing python3-pip..." && apt-get install -y python3-pip)
+	@which scons > /dev/null || (echo "Installing scons..." && pip3 install scons)
 	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
 	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
 	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
-	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
 
 # Clone and prepare dependencies
 prepare-deps:
@@ -71,8 +72,8 @@ prepare-deps:
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	scons -j 8 -C rpi-share/cbang disable_local="re2 libevent"
-	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C scons -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
+	python3 `which scons` -j 8 -C rpi-share/cbang disable_local="re2 libevent"
+	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C python3 `which scons` -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
 	cp rpi-share/camotics/build/gplan.so src/py/camotics/
 
 pkg: gplan
