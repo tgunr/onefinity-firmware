@@ -72,11 +72,17 @@ prepare-deps:
 		sed -i '/^xml_escape_table =/,/^})/c\def xml_escape_table():\n    return {\n        "&": "&amp;",\n        "<": "&lt;",\n        ">": "&gt;",\n        "\\\"": "&quot;",\n        "\\x27": "&apos;"\n    }' rpi-share/cbang/config/pkg/__init__.py; \
 		sed -i 's/str\.translate(xml_escape_table)/reduce(lambda s, k: s.replace(k, xml_escape_table()[k]), xml_escape_table().keys(), str)/g' rpi-share/cbang/config/pkg/__init__.py; \
 	fi
+	# Fix SCons tool paths
+	@echo "Setting up SCons environment..."
+	@mkdir -p rpi-share/cbang/config/pkg
+	@mkdir -p rpi-share/cbang/config/packager
+	@touch rpi-share/cbang/config/pkg/__init__.py
+	@touch rpi-share/cbang/config/packager/__init__.py
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	cd rpi-share/cbang && scons -j 8 disable_local="re2 libevent" build_dir=build
-	cd rpi-share/camotics && CBANG_HOME="../cbang" LC_ALL=C scons -j 8 gplan.so with_gui=0 with_tpl=0
+	cd rpi-share/cbang && PKG_HOME="$(PWD)/config" PACKAGER_HOME="$(PWD)/config" scons -j 8 disable_local="re2 libevent" build_dir=build
+	cd rpi-share/camotics && CBANG_HOME="../cbang" PKG_HOME="../cbang/config" PACKAGER_HOME="../cbang/config" LC_ALL=C scons -j 8 gplan.so with_gui=0 with_tpl=0
 	cp rpi-share/camotics/build/gplan.so src/py/camotics/
 
 pkg: gplan
