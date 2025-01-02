@@ -61,14 +61,17 @@ prepare-deps:
 	@cd rpi-share/camotics && git checkout v1.2.0
 	@git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang
 	@cd rpi-share/cbang && git checkout 1.2.0
+	@echo "Building cbang..."
+	@cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build
 	@echo "Creating minimal SConstruct..."
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
-		echo 'env.Append(CPPPATH = ["src", "../cbang"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["src", "../cbang", "build/include"])' >> SConstruct && \
 		echo 'env.Append(CPPDEFINES = ["NDEBUG"])' >> SConstruct && \
-		echo 'env.Append(LIBS = ["pthread", "dl"])' >> SConstruct && \
+		echo 'env.Append(LIBS = ["pthread", "dl", "cbang"])' >> SConstruct && \
+		echo 'env.Append(LIBPATH = ["build/lib"])' >> SConstruct && \
 		echo 'sources = [' >> SConstruct && \
 		echo '    "src/gcode/ast/Assign.cpp",' >> SConstruct && \
 		echo '    "src/gcode/ast/BinaryOp.cpp",' >> SConstruct && \
