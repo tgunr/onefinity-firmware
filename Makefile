@@ -47,6 +47,7 @@ check-deps:
 	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
 	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
 	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
+	@dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev)
 
 # Clone and prepare dependencies
 prepare-deps:
@@ -54,12 +55,14 @@ prepare-deps:
 	@if [ ! -f rpi-share/cbang/SConstruct ]; then \
 		echo "Cloning cbang..."; \
 		rm -rf rpi-share/cbang; \
-		git clone -b v1.0.0 https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
+		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
+		cd rpi-share/cbang && git checkout 442cd0a8a8ef4a3f9d19223caa0d74bc5cf7e4a5; \
 	fi
 	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
 		echo "Cloning camotics..."; \
 		rm -rf rpi-share/camotics; \
-		git clone -b v1.2.0 https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+		cd rpi-share/camotics && git checkout 9c2f8b8a5d6f3c6c8a3e612c5a6cd0c1c7c1a2f0; \
 	fi
 	# Fix Python 2 compatibility issue in cbang
 	@echo "Patching cbang for Python 2 compatibility..."
@@ -72,8 +75,8 @@ prepare-deps:
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	scons -j 8 -C rpi-share/cbang disable_local="re2 libevent"
-	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C scons -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
+	cd rpi-share/cbang && scons -j 8 disable_local="re2 libevent" build_dir=build
+	cd rpi-share/camotics && CBANG_HOME="../cbang" LC_ALL=C scons -j 8 gplan.so with_gui=0 with_tpl=0
 	cp rpi-share/camotics/build/gplan.so src/py/camotics/
 
 pkg: gplan
