@@ -55,15 +55,18 @@ prepare-deps:
 	@echo "Checking dependency repositories..."
 	@echo "Cloning camotics..."
 	@rm -rf rpi-share/camotics
+	@rm -rf rpi-share/cbang
 	@mkdir -p rpi-share
 	@git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics
 	@cd rpi-share/camotics && git checkout v1.2.0
+	@git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang
+	@cd rpi-share/cbang && git checkout v1.0.0
 	@echo "Creating minimal SConstruct..."
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
-		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["src", "../cbang"])' >> SConstruct && \
 		echo 'env.Append(CPPDEFINES = ["NDEBUG"])' >> SConstruct && \
 		echo 'env.Append(LIBS = ["pthread", "dl"])' >> SConstruct && \
 		echo 'sources = [' >> SConstruct && \
