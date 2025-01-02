@@ -46,7 +46,9 @@ deploy: pkg
 	mkdir -p /var/lib/bbctrl/firmware
 	-pip3 uninstall -y bbctrl
 	cp dist/$(PKG_NAME).tar.bz2 /var/lib/bbctrl/firmware/update.tar.bz2 
-	chmod +x scripts/update-bbctrl
+	find scripts -name "*.sh" -o -name "*.py" -exec chmod +x {} \;
+	find scripts -name "edit-boot-config" -exec chmod +x {} \;
+	-mkdir -p src/py/camotics
 	scripts/update-bbctrl
 
 bbserial:
