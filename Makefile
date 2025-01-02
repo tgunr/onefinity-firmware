@@ -53,24 +53,19 @@ check-deps:
 # Clone and prepare dependencies
 prepare-deps:
 	@echo "Checking dependency repositories..."
-	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
+	@if [ ! -f rpi-share/camotics ]; then \
 		echo "Cloning camotics..."; \
 		rm -rf rpi-share/camotics; \
 		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
 		cd rpi-share/camotics && git checkout v1.2.0; \
-		echo "Creating minimal SConstruct..."; \
-		echo 'import os' > SConstruct; \
-		echo 'env = Environment()' >> SConstruct; \
-		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct; \
-		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct; \
-		echo 'env.SharedLibrary("gplan", Glob("src/gcode/*.cpp"))' >> SConstruct; \
 	fi
-	@if [ ! -f rpi-share/cbang/SConstruct ]; then \
-		echo "Cloning cbang..."; \
-		rm -rf rpi-share/cbang; \
-		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
-		cd rpi-share/cbang && git checkout v1.0.0; \
-	fi
+	@echo "Creating minimal SConstruct..."
+	@cd rpi-share/camotics && \
+		echo 'import os' > SConstruct && \
+		echo 'env = Environment()' >> SConstruct && \
+		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct && \
+		echo 'env.SharedLibrary("gplan", Glob("src/gcode/*.cpp"))' >> SConstruct
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
