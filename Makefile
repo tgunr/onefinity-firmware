@@ -122,6 +122,14 @@ prepare-deps:
 		echo '    "src/gcode/plan/Planner.cpp",' >> SConstruct && \
 		echo '    "src/gcode/plan/Runner.cpp",' >> SConstruct && \
 		echo '    "src/gcode/plan/SCurve.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/SeekCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/SetCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Printer.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Tool.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ToolPath.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ToolShape.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ToolTable.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Units.cpp",' >> SConstruct && \
 		echo ']' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct
 
