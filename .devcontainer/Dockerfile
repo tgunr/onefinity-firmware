@@ -1,62 +1,24 @@
-FROM arm32v7/debian:bullseye
+FROM arm32v7/buildpack-deps:bullseye
 
 ENV DEBIAN_FRONTEND=noninteractive
 
-# Configure apt
-RUN echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/10no-check-valid-until && \
-    echo 'APT::Get::Assume-Yes "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until && \
-    echo 'APT::Get::Allow-Unauthenticated "true";' >> /etc/apt/apt.conf.d/10no-check-valid-until
-
-# Configure sources
-RUN echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list && \
-    echo "deb [allow-insecure=yes] http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb [allow-insecure=yes] http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
-    apt-get update && \
-    apt-get install -y curl gnupg && \
-    rm -rf /var/lib/apt/lists/*
+# Configure apt settings and install basic dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        build-essential \
+        ca-certificates \
+        curl \
+        git \
+        gnupg \
+        python3 \
+        python3-pip \
+        python3-dev \
+        && rm -rf /var/lib/apt/lists/*
 
 # Add Raspberry Pi repository
 RUN mkdir -p /etc/apt/keyrings && \
-    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg
-
-RUN echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
-
-# Install base packages and cross-compilation tools
-RUN dpkg --add-architecture armhf && \
-    apt-get update && \
-    apt-get install -y --no-install-recommends \
-    build-essential \
-    crossbuild-essential-armhf \
-    raspberrypi-kernel-headers \
-    device-tree-compiler \
-    flex \
-    bison \
-    bc \
-    git \
-    python3 \
-    python3-pip \
-    python3-dev \
-    sudo \
-    unzip \
-    wget \
-    scons \
-    libssl-dev:armhf \
-    gcc-avr \
-    avr-libc \
-    binutils-avr \
-    gcc-arm-linux-gnueabihf \
-    g++-arm-linux-gnueabihf \
-    make \
-    cmake \
-    pkg-config \
-    libudev-dev \
-    libyaml-dev:armhf \
-    zlib1g-dev:armhf \
-    libboost-dev:armhf \
-    libboost-system-dev:armhf \
-    libboost-filesystem-dev:armhf \
-    libboost-regex-dev:armhf \
-    && rm -rf /var/lib/apt/lists/*
+    curl -fsSL https://archive.raspberrypi.org/debian/raspberrypi.gpg.key | gpg --dearmor -o /etc/apt/keyrings/raspberrypi.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/raspberrypi.gpg] http://archive.raspberrypi.org/debian/ bullseye main" > /etc/apt/sources.list.d/raspi.list
 
 # Install Node.js
 RUN mkdir -p /etc/apt/keyrings && \
@@ -123,6 +85,14 @@ RUN mkdir -p rpi-share/cbang rpi-share/camotics && \
 # Set up Svelte components directory
 WORKDIR /workspace/onefinity-firmware/src/svelte-components
 
+# Create and set permissions for apt directories
+RUN sudo mkdir -p /var/lib/apt/lists/partial && \
+    sudo mkdir -p /var/cache/apt/archives/partial && \
+    sudo chmod -R 777 /var/lib/apt/lists && \
+    sudo chmod -R 777 /var/cache/apt && \
+    sudo rm -f /var/lib/apt/lists/lock && \
+    sudo rm -f /var/cache/apt/archives/lock
+        
 # Create package.json for Svelte components
 RUN echo '{\n\
   "name": "svelte-components",\n\
@@ -152,33 +122,14 @@ USER bbmc
 WORKDIR /workspace/onefinity-firmware
 
 # Cross-compile for 32-bit ARM
-RUN mkdir -p /var/lib/apt/lists/partial && \
-    apt-get update && \
+RUN apt-get update && \
     apt-get install -y software-properties-common && \
-    echo "deb http://deb.debian.org/debian bullseye main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
-    echo "deb http://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb https://deb.debian.org/debian bullseye main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb https://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list && \
+    echo "deb https://deb.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list && \
     apt-get update && \
-    apt-get install -y qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev && \
-    apt-get install -y \
-    build-essential \
-    python3 \
-    python3-pip \
-    python3-setuptools \
-    python3-wheel \
-    python3-dev \
-    git \
-    scons \
-    crossbuild-essential-armhf \
-    libyaml-dev:armhf \
-    libssl-dev:armhf \
-    zlib1g-dev:armhf \
-    libboost-dev:armhf \
-    libboost-system-dev:armhf \
-    libboost-filesystem-dev:armhf \
-    libboost-regex-dev:armhf && \
-    rm -rf /var/lib/apt/lists/*
-    
+    apt-get install -y qtbase5-dev qtdeclarative5-dev qtmultimedia5-dev
+
 # Initialize git repos
 RUN mkdir -p /cbang && chown bbmc:bbmc /cbang && \
     git init /cbang && cd /cbang && \
