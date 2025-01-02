@@ -48,41 +48,21 @@ check-deps:
 	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
 	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
 	@dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev)
+	@dpkg -l | grep binutils-dev > /dev/null || (echo "Installing binutils-dev..." && apt-get install -y binutils-dev)
 
 # Clone and prepare dependencies
 prepare-deps:
 	@echo "Checking dependency repositories..."
-	@if [ ! -f rpi-share/cbang/SConstruct ]; then \
-		echo "Cloning cbang..."; \
-		rm -rf rpi-share/cbang; \
-		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
-		cd rpi-share/cbang && git checkout 442cd0a8a8ef4a3f9d19223caa0d74bc5cf7e4a5; \
-	fi
 	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
 		echo "Cloning camotics..."; \
 		rm -rf rpi-share/camotics; \
 		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout 9c2f8b8a5d6f3c6c8a3e612c5a6cd0c1c7c1a2f0; \
+		cd rpi-share/camotics && git checkout v1.2.0; \
 	fi
-	# Fix Python 2 compatibility issue in cbang
-	@echo "Patching cbang for Python 2 compatibility..."
-	@if ! grep -q "def xml_escape_table()" rpi-share/cbang/config/pkg/__init__.py; then \
-		sed -i '1i from functools import reduce' rpi-share/cbang/config/pkg/__init__.py; \
-		sed -i '1i import string' rpi-share/cbang/config/pkg/__init__.py; \
-		sed -i '/^xml_escape_table =/,/^})/c\def xml_escape_table():\n    return {\n        "&": "&amp;",\n        "<": "&lt;",\n        ">": "&gt;",\n        "\\\"": "&quot;",\n        "\\x27": "&apos;"\n    }' rpi-share/cbang/config/pkg/__init__.py; \
-		sed -i 's/str\.translate(xml_escape_table)/reduce(lambda s, k: s.replace(k, xml_escape_table()[k]), xml_escape_table().keys(), str)/g' rpi-share/cbang/config/pkg/__init__.py; \
-	fi
-	# Fix SCons tool paths
-	@echo "Setting up SCons environment..."
-	@mkdir -p rpi-share/cbang/config/pkg
-	@mkdir -p rpi-share/cbang/config/packager
-	@touch rpi-share/cbang/config/pkg/__init__.py
-	@touch rpi-share/cbang/config/packager/__init__.py
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	cd rpi-share/cbang && PKG_HOME="$(PWD)/config" PACKAGER_HOME="$(PWD)/config" scons -j 8 disable_local="re2 libevent" build_dir=build
-	cd rpi-share/camotics && CBANG_HOME="../cbang" PKG_HOME="../cbang/config" PACKAGER_HOME="../cbang/config" LC_ALL=C scons -j 8 gplan.so with_gui=0 with_tpl=0
+	cd rpi-share/camotics && scons -j 8 gplan.so with_gui=0 with_tpl=0 strict=0 with_local=1
 	cp rpi-share/camotics/build/gplan.so src/py/camotics/
 
 pkg: gplan
