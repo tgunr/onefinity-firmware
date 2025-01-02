@@ -39,6 +39,11 @@ all: $(HTML) $(RESOURCES)
 pkg: all $(AVR_FIRMWARE) bbserial
 	./setup.py sdist
 
+deploy: pkg
+	mkdir -p /var/lib/bbctrl/firmware
+	cp dist/$(PKG_NAME).tar.bz2 /var/lib/bbctrl/firmware/update.tar.bz2 
+	./scripts/update-bbctrl"
+
 bbserial:
 	$(MAKE) -C src/bbserial
 
@@ -103,4 +108,4 @@ clean:
 	rm -rf rpi-share
 	git clean -fxd
 
-.PHONY: all install clean tidy pkg gplan lint pylint jshint bbserial
+.PHONY: all install clean tidy pkg gplan lint pylint jshint bbserial deploy
