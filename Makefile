@@ -65,23 +65,61 @@ prepare-deps:
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct && \
 		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct && \
 		echo 'sources = [' >> SConstruct && \
-		echo '    "src/gcode/Axes.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Move.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ToolTable.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ToolPath.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Program.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Assign.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/BinaryOp.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Block.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Comment.cpp",' >> SConstruct && \
 		echo '    "src/gcode/ast/FunctionCall.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/NamedReference.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Number.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/OCode.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Operator.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Program.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/QuotedExpr.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Reference.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/UnaryOp.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Word.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Axes.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Codes.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ControllerImpl.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/DoLoop.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/Evaluator.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/GCodeInterpreter.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/Interpreter.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/Loop.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/OCodeInterpreter.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/ProgramProducer.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/ProducerStack.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/ProgramProducer.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/RepeatLoop.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/SubroutineCall.cpp",' >> SConstruct && \
 		echo '    "src/gcode/interp/SubroutineLoader.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/Loop.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/DoLoop.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/RepeatLoop.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/GCodeMachine.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/Machine.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MachineLinearizer.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MachineMatrix.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MachinePipeline.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MachineState.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MachineUnitAdapter.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/MoveSink.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/PortType.cpp",' >> SConstruct && \
+		echo '    "src/gcode/machine/TransMatrix.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ModalGroup.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Move.cpp",' >> SConstruct && \
+		echo '    "src/gcode/MoveType.cpp",' >> SConstruct && \
+		echo '    "src/gcode/parse/Parser.cpp",' >> SConstruct && \
+		echo '    "src/gcode/parse/Tokenizer.cpp",' >> SConstruct && \
+		echo '    "src/gcode/parse/TokenType.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/DwellCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/InputCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/LineCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/LinePlanner.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/OutputCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/PauseCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/PlannerCommand.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/PlannerConfig.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/Planner.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/Runner.cpp",' >> SConstruct && \
+		echo '    "src/gcode/plan/SCurve.cpp",' >> SConstruct && \
 		echo ']' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct
 
