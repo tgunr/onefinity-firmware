@@ -44,9 +44,24 @@ check-deps:
 	@echo "Checking build dependencies..."
 	@which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons)
 	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
+	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
 	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
 
-gplan: check-deps bbserial
+# Clone and prepare dependencies
+prepare-deps:
+	@echo "Checking dependency repositories..."
+	@if [ ! -f rpi-share/cbang/SConstruct ]; then \
+		echo "Cloning cbang..."; \
+		rm -rf rpi-share/cbang; \
+		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
+	fi
+	@if [ ! -f rpi-share/camotics/SConstruct ]; then \
+		echo "Cloning camotics..."; \
+		rm -rf rpi-share/camotics; \
+		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+	fi
+
+gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
 	scons -j 8 -C rpi-share/cbang disable_local="re2 libevent"
 	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C scons -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
