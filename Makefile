@@ -39,7 +39,14 @@ SVELTE_DIST := src/svelte-components/dist/index.js src/svelte-components/dist/st
 all: $(HTML) $(RESOURCES)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
 
-gplan: bbserial
+# Check for required build tools and install if missing
+check-deps:
+	@echo "Checking build dependencies..."
+	@which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons)
+	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
+	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
+
+gplan: check-deps bbserial
 	mkdir -p src/py/camotics
 	scons -j 8 -C rpi-share/cbang disable_local="re2 libevent"
 	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C scons -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
