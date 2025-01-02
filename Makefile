@@ -33,6 +33,9 @@ ifndef PASSWORD
 PASSWORD=onefinity
 endif
 
+SVELTE_SOURCES := $(shell find src/svelte-components/src -type f)
+SVELTE_DIST := src/svelte-components/dist/index.js src/svelte-components/dist/style.css src/svelte-components/dist/smui.css
+
 all: $(HTML) $(RESOURCES)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
 
@@ -63,6 +66,9 @@ $(GPLAN_MOD): $(GPLAN_IMG)
 $(GPLAN_IMG):
 	./scripts/gplan-init-build.sh
 
+$(SVELTE_DIST): $(SVELTE_SOURCES) src/svelte-components/package.json src/svelte-components/tsconfig.json
+	cd src/svelte-components && npm run build
+
 .PHONY: $(AVR_FIRMWARE)
 $(AVR_FIRMWARE):
 	$(MAKE) -C src/avr
@@ -83,8 +89,9 @@ node_modules: package.json
 $(TARGET_DIR)/%: src/resources/%
 	install -D $< $@
 
-src/svelte-components/dist/%:
-	cd src/svelte-components && [ -d dist ] || npm run build
+$(TARGET_DIR)/svelte-components/%: $(SVELTE_DIST)
+	@mkdir -p $(TARGET_DIR)/svelte-components
+	cp src/svelte-components/dist/* $(TARGET_DIR)/svelte-components/
 
 $(TARGET_DIR)/index.html: build/templates.pug
 $(TARGET_DIR)/index.html: $(wildcard src/static/js/*)
