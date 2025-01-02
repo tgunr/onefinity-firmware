@@ -39,8 +39,16 @@ SVELTE_DIST := src/svelte-components/dist/index.js src/svelte-components/dist/st
 all: $(HTML) $(RESOURCES)
 	@for SUB in $(SUBPROJECTS); do $(MAKE) -C src/$$SUB; done
 
-pkg: all $(AVR_FIRMWARE) bbserial
-	./setup.py sdist
+gplan: bbserial
+	mkdir -p src/py/camotics
+	scons -j 8 -C rpi-share/cbang disable_local="re2 libevent"
+	CBANG_HOME="$(PWD)/rpi-share/cbang" LC_ALL=C scons -j 8 -C rpi-share/camotics gplan.so with_gui=0 with_tpl=0
+	cp rpi-share/camotics/build/gplan.so src/py/camotics/
+
+pkg: gplan
+	python3 setup.py bdist_deb
+	mv dist/*.deb dist/$(PKG_NAME).deb
+	tar czf dist/$(PKG_NAME).tar.bz2 -C dist $(PKG_NAME).deb scripts src/py/camotics/gplan.so
 
 deploy: pkg
 	mkdir -p /var/lib/bbctrl/firmware
@@ -53,14 +61,11 @@ deploy: pkg
 	rm -rf bbctrl-1.4.3 && \
 	tar xf /var/lib/bbctrl/firmware/update.tar.bz2 && \
 	cd bbctrl-1.4.3 && \
-	mkdir -p src/py/camotics && \
 	pip3 install -e . && \
 	./scripts/install.sh
 
 bbserial:
 	$(MAKE) -C src/bbserial
-
-gplan: $(GPLAN_TARGET)
 
 $(GPLAN_TARGET): $(GPLAN_MOD)
 	cp $< $@
