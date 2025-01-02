@@ -64,7 +64,26 @@ prepare-deps:
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct && \
 		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct && \
-		echo 'env.SharedLibrary("gplan", Glob("src/gcode/*.cpp"))' >> SConstruct
+		echo 'sources = [' >> SConstruct && \
+		echo '    "src/gcode/Axes.cpp",' >> SConstruct && \
+		echo '    "src/gcode/Move.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ToolTable.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ToolPath.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/Program.cpp",' >> SConstruct && \
+		echo '    "src/gcode/ast/FunctionCall.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/Evaluator.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/GCodeInterpreter.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/Interpreter.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/OCodeInterpreter.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/ProgramProducer.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/ProducerStack.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/SubroutineCall.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/SubroutineLoader.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/Loop.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/DoLoop.cpp",' >> SConstruct && \
+		echo '    "src/gcode/interp/RepeatLoop.cpp",' >> SConstruct && \
+		echo ']' >> SConstruct && \
+		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
