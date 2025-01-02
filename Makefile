@@ -48,9 +48,14 @@ deploy: pkg
 	cp dist/$(PKG_NAME).tar.bz2 /var/lib/bbctrl/firmware/update.tar.bz2 
 	find scripts -name "*.sh" -o -name "*.py" -exec chmod +x {} \;
 	find scripts -name "edit-boot-config" -exec chmod +x {} \;
-	-mkdir -p src/py/camotics
 	systemctl stop bbctrl
-	cd /tmp && tar xf /var/lib/bbctrl/firmware/update.tar.bz2 && cd bbctrl-1.4.3 && pip3 install -e . && ./scripts/install.sh
+	cd /tmp && \
+	rm -rf bbctrl-1.4.3 && \
+	tar xf /var/lib/bbctrl/firmware/update.tar.bz2 && \
+	cd bbctrl-1.4.3 && \
+	mkdir -p src/py/camotics && \
+	pip3 install -e . && \
+	./scripts/install.sh
 
 bbserial:
 	$(MAKE) -C src/bbserial
