@@ -49,7 +49,6 @@ deploy: pkg
 	find scripts -name "*.sh" -o -name "*.py" -exec chmod +x {} \;
 	find scripts -name "edit-boot-config" -exec chmod +x {} \;
 	-mkdir -p src/py/camotics
-	pip3 install --force-reinstall dist/$(PKG_NAME).tar.bz2
 	scripts/update-bbctrl
 
 bbserial:
