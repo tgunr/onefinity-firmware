@@ -42,107 +42,85 @@ all: $(HTML) $(RESOURCES)
 # Check for required build tools and install if missing
 check-deps:
 	@echo "Checking build dependencies..."
-	@which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons)
-	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
-	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
-	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
-	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
-	@dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev)
-	@dpkg -l | grep binutils-dev > /dev/null || (echo "Installing binutils-dev..." && apt-get install -y binutils-dev)
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		which scons > /dev/null || (echo "Installing scons..." && brew install scons); \
+		which g++ > /dev/null || (echo "Installing g++..." && brew install gcc); \
+		which git > /dev/null || (echo "Installing git..." && brew install git); \
+		which python3 > /dev/null || (echo "Installing python3..." && brew install python3); \
+		brew list openssl > /dev/null || (echo "Installing openssl..." && brew install openssl); \
+	else \
+		which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons); \
+		which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential); \
+		which git > /dev/null || (echo "Installing git..." && apt-get install -y git); \
+		dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev); \
+		dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev); \
+		dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev); \
+		dpkg -l | grep binutils-dev > /dev/null || (echo "Installing binutils-dev..." && apt-get install -y binutils-dev); \
+	fi
 
-# Clone and prepare dependencies
-prepare-deps:
-	@echo "Checking dependency repositories..."
-	@echo "Cloning camotics..."
-	@rm -rf rpi-share/camotics
-	@rm -rf rpi-share/cbang
-	@mkdir -p rpi-share
-	@git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics
-	@cd rpi-share/camotics && git checkout v1.2.0
-	@git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang
-	@cd rpi-share/cbang && git checkout 1.2.0
-	@echo "Building cbang..."
-	@cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build
-	@cd rpi-share/cbang && cp -r include/* ../camotics/build/include/
-	@cd rpi-share/cbang && cp -r src/* ../camotics/build/include/
-	@echo "Creating minimal SConstruct..."
-	@cd rpi-share/camotics && \
+# Build cbang dependency
+cbang: check-deps
+	@echo "Checking cbang..."
+	@if [ ! -d "rpi-share/cbang" ]; then \
+		echo "Cloning cbang..."; \
+		mkdir -p rpi-share; \
+		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
+		cd rpi-share/cbang && git checkout 1.2.0; \
+	fi
+	@if [ ! -f "rpi-share/camotics/build/lib/libcbang.a" ] && [ ! -f "rpi-share/camotics/build/lib/libcbang.dylib" ]; then \
+		echo "Building cbang..."; \
+		if [ "$(shell uname)" = "Darwin" ]; then \
+			cd rpi-share/cbang && \
+			mkdir -p ../camotics/build/include && \
+			echo "openssl_include=/opt/homebrew/opt/openssl/include" > config/local.py && \
+			echo "openssl_libdir=/opt/homebrew/opt/openssl/lib" >> config/local.py && \
+			echo "boost_include=/opt/homebrew/include" >> config/local.py && \
+			echo "boost_libdir=/opt/homebrew/lib" >> config/local.py && \
+			echo "osx_min_ver=10.10" >> config/local.py && \
+			echo "disable_local=True" >> config/local.py && \
+			echo "strict=False" >> config/local.py && \
+			echo "debug=False" >> config/local.py && \
+			echo "optimize=True" >> config/local.py && \
+			echo "disable_logging=True" >> config/local.py && \
+			echo "disable_feature_log=True" >> config/local.py && \
+			CPPFLAGS="-I/opt/homebrew/opt/openssl/include -I/opt/homebrew/include -I/usr/local/include" \
+			LDFLAGS="-L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/lib -L/usr/local/lib" \
+			CXXFLAGS="-std=c++11" \
+			scons -j 8 build_dir=../camotics/build; \
+		else \
+			cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build; \
+		fi && \
+		cd rpi-share/cbang && cp -r include/* ../camotics/build/include/ && \
+		cd rpi-share/cbang && cp -r src/* ../camotics/build/include/; \
+	else \
+		echo "cbang already built, skipping..."; \
+	fi
+
+# Build camotics dependency
+camotics: check-deps cbang
+	@echo "Checking camotics..."
+	@if [ ! -d "rpi-share/camotics" ]; then \
+		echo "Cloning camotics..."; \
+		mkdir -p rpi-share; \
+		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+		cd rpi-share/camotics && git checkout v1.2.0; \
+	fi
+	@if [ ! -f "rpi-share/camotics/libgplan.so" ] && [ ! -f "rpi-share/camotics/libgplan.dylib" ]; then \
+		echo "Creating minimal SConstruct..."; \
+		cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
-		echo 'env.Append(CPPPATH = ["src", "../cbang", "build/include"])' >> SConstruct && \
-		echo 'env.Append(CPPDEFINES = ["NDEBUG"])' >> SConstruct && \
-		echo 'env.Append(LIBS = ["pthread", "dl", "cbang"])' >> SConstruct && \
-		echo 'env.Append(LIBPATH = ["build/lib"])' >> SConstruct && \
-		echo 'sources = [' >> SConstruct && \
-		echo '    "src/gcode/ast/Assign.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/BinaryOp.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Block.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Comment.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/FunctionCall.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/NamedReference.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Number.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/OCode.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Operator.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Program.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/QuotedExpr.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Reference.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/UnaryOp.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ast/Word.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Axes.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Codes.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ControllerImpl.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/DoLoop.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/Evaluator.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/GCodeInterpreter.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/Interpreter.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/Loop.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/OCodeInterpreter.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/ProducerStack.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/ProgramProducer.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/RepeatLoop.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/SubroutineCall.cpp",' >> SConstruct && \
-		echo '    "src/gcode/interp/SubroutineLoader.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/GCodeMachine.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/Machine.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MachineLinearizer.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MachineMatrix.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MachinePipeline.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MachineState.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MachineUnitAdapter.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/MoveSink.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/PortType.cpp",' >> SConstruct && \
-		echo '    "src/gcode/machine/TransMatrix.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ModalGroup.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Move.cpp",' >> SConstruct && \
-		echo '    "src/gcode/MoveType.cpp",' >> SConstruct && \
-		echo '    "src/gcode/parse/Parser.cpp",' >> SConstruct && \
-		echo '    "src/gcode/parse/Tokenizer.cpp",' >> SConstruct && \
-		echo '    "src/gcode/parse/TokenType.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/DwellCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/InputCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/LineCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/LinePlanner.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/OutputCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/PauseCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/PlannerCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/PlannerConfig.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/Planner.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/Runner.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/SCurve.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/SeekCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/plan/SetCommand.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Printer.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Tool.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ToolPath.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ToolShape.cpp",' >> SConstruct && \
-		echo '    "src/gcode/ToolTable.cpp",' >> SConstruct && \
-		echo '    "src/gcode/Units.cpp",' >> SConstruct && \
-		echo ']' >> SConstruct && \
-		echo 'lib = env.SharedLibrary("gplan", sources)' >> SConstruct && \
-		echo 'env.Default(lib)' >> SConstruct
+		echo 'env.Append(CPPPATH = ["#/src", "#/build/include"])' >> SConstruct && \
+		echo 'env.Append(LIBPATH = ["#/build/lib"])' >> SConstruct && \
+		echo 'env.Append(LIBS = ["cbang"])' >> SConstruct && \
+		echo 'env.SharedLibrary("gplan", ["src/gplan/GCode.cpp", "src/gplan/PlannerConfig.cpp", "src/gplan/PlannerCommand.cpp", "src/gplan/Planner.cpp", "src/gplan/Plan.cpp"])' >> SConstruct && \
+		scons -j 8; \
+	else \
+		echo "camotics already built, skipping..."; \
+	fi
 
-gplan: check-deps prepare-deps bbserial
+gplan: check-deps camotics bbserial
 	mkdir -p src/py/camotics
 	cd rpi-share/camotics && scons -j 8
 	cp rpi-share/camotics/libgplan.so src/py/camotics/gplan.so
