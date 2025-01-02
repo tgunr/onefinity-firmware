@@ -53,12 +53,11 @@ check-deps:
 # Clone and prepare dependencies
 prepare-deps:
 	@echo "Checking dependency repositories..."
-	@if [ ! -f rpi-share/camotics ]; then \
-		echo "Cloning camotics..."; \
-		rm -rf rpi-share/camotics; \
-		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout v1.2.0; \
-	fi
+	@echo "Cloning camotics..."
+	@rm -rf rpi-share/camotics
+	@mkdir -p rpi-share
+	@git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics
+	@cd rpi-share/camotics && git checkout v1.2.0
 	@echo "Creating minimal SConstruct..."
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
