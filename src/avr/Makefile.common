@@ -108,7 +108,6 @@ usersig:
 
 # Clean
 tidy:
-	echo 'avr tidy'
 	rm -f $(shell find . -name '*~' -o -name '#*')
 
 clean: tidy

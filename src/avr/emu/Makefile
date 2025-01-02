@@ -27,7 +27,7 @@ build/%.o: ../src/%.cpp
 
 # Clean
 tidy:
-	rm -f $(shell find -name \*~ -o -name \#\*)
+	rm -f $(shell find . -name \*~ -o -name \#\*)
 
 clean: tidy
 	rm -rf $(TARGET) build
