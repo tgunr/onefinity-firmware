@@ -131,12 +131,13 @@ prepare-deps:
 		echo '    "src/gcode/ToolTable.cpp",' >> SConstruct && \
 		echo '    "src/gcode/Units.cpp",' >> SConstruct && \
 		echo ']' >> SConstruct && \
-		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct
+		echo 'lib = env.SharedLibrary("gplan", sources)' >> SConstruct && \
+		echo 'env.Default(lib)' >> SConstruct
 
 gplan: check-deps prepare-deps bbserial
 	mkdir -p src/py/camotics
-	cd rpi-share/camotics && scons -j 8 gplan.so
-	cp rpi-share/camotics/gplan.so src/py/camotics/
+	cd rpi-share/camotics && scons -j 8
+	cp rpi-share/camotics/libgplan.so src/py/camotics/gplan.so
 
 pkg: gplan
 	python3 setup.py bdist_deb
