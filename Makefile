@@ -62,8 +62,10 @@ prepare-deps:
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
-		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror"])' >> SConstruct && \
+		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
 		echo 'env.Append(CPPPATH = ["src"])' >> SConstruct && \
+		echo 'env.Append(CPPDEFINES = ["NDEBUG"])' >> SConstruct && \
+		echo 'env.Append(LIBS = ["pthread", "dl"])' >> SConstruct && \
 		echo 'sources = [' >> SConstruct && \
 		echo '    "src/gcode/ast/Assign.cpp",' >> SConstruct && \
 		echo '    "src/gcode/ast/BinaryOp.cpp",' >> SConstruct && \
