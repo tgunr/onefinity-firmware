@@ -63,6 +63,8 @@ prepare-deps:
 	@cd rpi-share/cbang && git checkout 1.2.0
 	@echo "Building cbang..."
 	@cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build
+	@cd rpi-share/cbang && cp -r include/* ../camotics/build/include/
+	@cd rpi-share/cbang && cp -r src/* ../camotics/build/include/
 	@echo "Creating minimal SConstruct..."
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
