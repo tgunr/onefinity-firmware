@@ -44,7 +44,7 @@ pkg: all $(AVR_FIRMWARE) bbserial
 
 deploy: pkg
 	mkdir -p /var/lib/bbctrl/firmware
-	pip3 uninstall -y bbctrl
+	-pip3 uninstall -y bbctrl
 	cp dist/$(PKG_NAME).tar.bz2 /var/lib/bbctrl/firmware/update.tar.bz2 
 	chmod +x scripts/update-bbctrl
 	scripts/update-bbctrl
