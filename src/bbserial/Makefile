@@ -19,7 +19,7 @@ $(KDIR): $(KPKG)
 	$(MAKE) $(KOPTS) modules_prepare
 
 $(KPKG):
-	wget $(KURL)
+	wget -O $(KPKG) $(KURL)
 
 clean:
 	$(MAKE) $(KOPTS) M=$(DIR) clean
