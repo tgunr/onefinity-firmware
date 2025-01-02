@@ -60,7 +60,7 @@ prepare-deps:
 	@git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics
 	@cd rpi-share/camotics && git checkout v1.2.0
 	@git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang
-	@cd rpi-share/cbang && git checkout v1.0.0
+	@cd rpi-share/cbang && git checkout 1.2.0
 	@echo "Creating minimal SConstruct..."
 	@cd rpi-share/camotics && \
 		echo 'import os' > SConstruct && \
