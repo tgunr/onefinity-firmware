@@ -130,9 +130,8 @@ camotics: check-deps cbang
 		git checkout master; \
 	fi
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ]; then \
-		echo "Creating minimal SConstruct..."; \
+		echo "Building camotics..."; \
 		cd rpi-share/camotics && \
-		mkdir -p build/include && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Decider("MD5-timestamp")' >> SConstruct && \
@@ -145,7 +144,9 @@ camotics: check-deps cbang
 		echo 'env.VariantDir("build/gplan", "src", duplicate=0)' >> SConstruct && \
 		echo 'sources = ["build/gplan/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
-		scons -j 2 --implicit-cache --max-drift=1; \
+		scons -j 2 --implicit-cache --max-drift=1 && \
+		cp libgplan.so ../.. && \
+		cp libgplan.so ../../src/py/camotics/; \
 	else \
 		echo "camotics already built, skipping..."; \
 	fi
