@@ -76,8 +76,6 @@ $(CBANG_LIB): $(CBANG_CONFIG_STAMP)
 	echo "env.Decider('MD5-timestamp')" >> SConstruct.local && \
 	echo "env.SetOption('max_drift', 1)" >> SConstruct.local && \
 	echo "env.SourceCode('.', None)" >> SConstruct.local && \
-	echo "def always_build(env, target, source):" >> SConstruct.local && \
-	echo "    return False" >> SConstruct.local && \
 	echo "env['CONFIGUREDIR'] = '#../camotics/build/config.cache'" >> SConstruct.local && \
 	echo "env['CONFIGURELOG'] = '#../camotics/build/config.log'" >> SConstruct.local && \
 	echo "env.CacheDir('../camotics/build/.scons_cache')" >> SConstruct.local && \
@@ -85,7 +83,7 @@ $(CBANG_LIB): $(CBANG_CONFIG_STAMP)
 	CPPFLAGS="-I/usr/include/openssl -I/usr/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
 	LDFLAGS="-L/usr/lib" \
 	CXXFLAGS="-std=c++11" \
-	scons -j 2 --site-dir=../camotics/build --no-configure --config=force build_dir=../camotics/build variant_dir=../camotics/build/variant && \
+	scons -j 2 --implicit-cache --max-drift=1 build_dir=../camotics/build variant_dir=../camotics/build/variant && \
 	cp -r include/* ../camotics/build/include/ && \
 	cp -r src/* ../camotics/build/include/
 
@@ -95,7 +93,8 @@ $(CBANG_CONFIG_STAMP): | rpi-share/cbang
 	@cd rpi-share/cbang && \
 	echo "cache_dir='../camotics/build/.scons_cache'" > config/local.py && \
 	echo "variant_dir='../camotics/build/variant'" >> config/local.py && \
-	echo "no_configure=True" >> config/local.py && \
+	echo "implicit_cache=True" >> config/local.py && \
+	echo "max_drift=1" >> config/local.py && \
 	echo "openssl_include='/usr/include/openssl'" >> config/local.py && \
 	echo "openssl_libdir='/usr/lib'" >> config/local.py && \
 	echo "boost_include='/usr/include'" >> config/local.py && \
