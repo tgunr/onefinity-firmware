@@ -83,7 +83,10 @@ cbang: check-deps
 			echo "optimize=True" >> config/local.py && \
 			echo "disable_logging=True" >> config/local.py && \
 			echo "disable_feature_log=True" >> config/local.py && \
-			CPPFLAGS="-I/opt/homebrew/opt/openssl/include -I/opt/homebrew/include -I/usr/local/include" \
+			echo "disable_feature_stream=True" >> config/local.py && \
+			echo "disable_feature_throw=True" >> config/local.py && \
+			echo "disable_feature_sstr=True" >> config/local.py && \
+			CPPFLAGS="-I/opt/homebrew/opt/openssl/include -I/opt/homebrew/include -I/usr/local/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0" \
 			LDFLAGS="-L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/lib -L/usr/local/lib" \
 			CXXFLAGS="-std=c++11" \
 			scons -j 8 build_dir=../camotics/build --cache-disable; \
