@@ -59,47 +59,48 @@ check-deps:
 	fi
 
 # Build cbang dependency
-cbang: check-deps
-	@echo "Checking cbang..."
-	@if [ ! -d "rpi-share/cbang" ]; then \
-		echo "Cloning cbang..."; \
-		mkdir -p rpi-share; \
-		git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang; \
-		cd rpi-share/cbang && git checkout 1.2.0; \
-	fi
-	@if [ ! -f "rpi-share/camotics/build/lib/libcbang.a" ] && [ ! -f "rpi-share/camotics/build/lib/libcbang.dylib" ]; then \
-		echo "Building cbang..."; \
-		if [ "$(shell uname)" = "Darwin" ]; then \
-			cd rpi-share/cbang && \
-			mkdir -p ../camotics/build/include && \
-			echo "openssl_include=/usr/include/openssl" > config/local.py && \
-			echo "openssl_libdir=/usr/lib" >> config/local.py && \
-			echo "boost_include=/opt/homebrew/include" >> config/local.py && \
-			echo "boost_libdir=/opt/homebrew/lib" >> config/local.py && \
-			echo "osx_min_ver=10.10" >> config/local.py && \
-			echo "disable_local=True" >> config/local.py && \
-			echo "strict=False" >> config/local.py && \
-			echo "debug=False" >> config/local.py && \
-			echo "optimize=True" >> config/local.py && \
-			echo "disable_logging=True" >> config/local.py && \
-			echo "disable_feature_log=True" >> config/local.py && \
-			echo "disable_feature_stream=True" >> config/local.py && \
-			echo "disable_feature_throw=True" >> config/local.py && \
-			echo "disable_feature_sstr=True" >> config/local.py && \
-			echo "disable_feature_exception=True" >> config/local.py && \
-			echo "disable_feature_iostream=True" >> config/local.py && \
-			CPPFLAGS="-I/opt/homebrew/opt/openssl/include -I/opt/homebrew/include -I/usr/local/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
-			LDFLAGS="-L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/lib -L/usr/local/lib" \
-			CXXFLAGS="-std=c++11" \
-			scons -j 8 build_dir=../camotics/build --cache-disable; \
-		else \
-			cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build --cache-disable; \
-		fi && \
-		cd rpi-share/cbang && cp -r include/* ../camotics/build/include/ && \
-		cd rpi-share/cbang && cp -r src/* ../camotics/build/include/; \
-	else \
-		echo "cbang already built, skipping..."; \
-	fi
+CBANG_CONFIG_FILE := rpi-share/cbang/config/local.py
+CBANG_CONFIG_STAMP := rpi-share/camotics/build/.config_stamp
+CBANG_LIB := rpi-share/camotics/build/lib/libcbang.a
+
+cbang: check-deps $(CBANG_LIB)
+
+$(CBANG_LIB): $(CBANG_CONFIG_STAMP)
+	@echo "Building cbang..."
+	@cd rpi-share/cbang && \
+	CPPFLAGS="-I/usr/include/openssl -I/usr/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
+	LDFLAGS="-L/usr/lib" \
+	CXXFLAGS="-std=c++11" \
+	scons -j 2 build_dir=../camotics/build --cache-disable && \
+	cp -r include/* ../camotics/build/include/ && \
+	cp -r src/* ../camotics/build/include/
+
+$(CBANG_CONFIG_STAMP): | rpi-share/cbang
+	@echo "Configuring cbang..."
+	@mkdir -p rpi-share/camotics/build/include
+	@cd rpi-share/cbang && \
+	echo "openssl_include=/usr/include/openssl" > config/local.py && \
+	echo "openssl_libdir=/usr/lib" >> config/local.py && \
+	echo "boost_include=/usr/include" >> config/local.py && \
+	echo "boost_libdir=/usr/lib" >> config/local.py && \
+	echo "disable_local=True" >> config/local.py && \
+	echo "strict=False" >> config/local.py && \
+	echo "debug=False" >> config/local.py && \
+	echo "optimize=True" >> config/local.py && \
+	echo "disable_logging=True" >> config/local.py && \
+	echo "disable_feature_log=True" >> config/local.py && \
+	echo "disable_feature_stream=True" >> config/local.py && \
+	echo "disable_feature_throw=True" >> config/local.py && \
+	echo "disable_feature_sstr=True" >> config/local.py && \
+	echo "disable_feature_exception=True" >> config/local.py && \
+	echo "disable_feature_iostream=True" >> config/local.py && \
+	touch ../camotics/build/.config_stamp
+
+rpi-share/cbang:
+	@echo "Cloning cbang..."
+	@mkdir -p rpi-share
+	@git clone https://github.com/CauldronDevelopmentLLC/cbang.git rpi-share/cbang
+	@cd rpi-share/cbang && git checkout 1.2.0
 
 # Build camotics dependency
 camotics: check-deps cbang
