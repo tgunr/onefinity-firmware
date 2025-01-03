@@ -130,14 +130,20 @@ camotics: check-deps cbang
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ] && [ ! -f "rpi-share/camotics/libgplan.dylib" ]; then \
 		echo "Creating minimal SConstruct..."; \
 		cd rpi-share/camotics && \
+		mkdir -p build/include && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
+		echo 'env.Decider("MD5-timestamp")' >> SConstruct && \
+		echo 'env.SetOption("max_drift", 1)' >> SConstruct && \
+		echo 'env.SourceCode(".", None)' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
 		echo 'env.Append(CPPPATH = ["#/src", "#/build/include"])' >> SConstruct && \
 		echo 'env.Append(LIBPATH = ["#/build/lib"])' >> SConstruct && \
 		echo 'env.Append(LIBS = ["cbang"])' >> SConstruct && \
-		echo 'env.SharedLibrary("gplan", ["src/gplan/GCode.cpp", "src/gplan/PlannerConfig.cpp", "src/gplan/PlannerCommand.cpp", "src/gplan/Planner.cpp", "src/gplan/Plan.cpp"])' >> SConstruct && \
-		scons -j 8; \
+		echo 'env.VariantDir("build/gplan", "src/gplan", duplicate=0)' >> SConstruct && \
+		echo 'sources = ["build/gplan/" + x for x in ["GCode.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp", "Plan.cpp"]]' >> SConstruct && \
+		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
+		scons -j 2 --implicit-cache --max-drift=1; \
 	else \
 		echo "camotics already built, skipping..."; \
 	fi
