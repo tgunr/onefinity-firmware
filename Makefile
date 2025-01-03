@@ -62,16 +62,18 @@ check-deps:
 CBANG_CONFIG_FILE := rpi-share/cbang/config/local.py
 CBANG_CONFIG_STAMP := rpi-share/camotics/build/.config_stamp
 CBANG_LIB := rpi-share/camotics/build/lib/libcbang.a
+CBANG_CACHE_DIR := rpi-share/camotics/build/.scons_cache
 
 cbang: check-deps $(CBANG_LIB)
 
 $(CBANG_LIB): $(CBANG_CONFIG_STAMP)
 	@echo "Building cbang..."
 	@cd rpi-share/cbang && \
+	mkdir -p ../camotics/build/.scons_cache && \
 	CPPFLAGS="-I/usr/include/openssl -I/usr/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
 	LDFLAGS="-L/usr/lib" \
 	CXXFLAGS="-std=c++11" \
-	scons -j 2 build_dir=../camotics/build --cache-disable && \
+	scons -j 2 build_dir=../camotics/build --cache-dir=../camotics/build/.scons_cache --max-drift=1 && \
 	cp -r include/* ../camotics/build/include/ && \
 	cp -r src/* ../camotics/build/include/
 
@@ -79,10 +81,11 @@ $(CBANG_CONFIG_STAMP): | rpi-share/cbang
 	@echo "Configuring cbang..."
 	@mkdir -p rpi-share/camotics/build/include
 	@cd rpi-share/cbang && \
-	echo "openssl_include=/usr/include/openssl" > config/local.py && \
-	echo "openssl_libdir=/usr/lib" >> config/local.py && \
-	echo "boost_include=/usr/include" >> config/local.py && \
-	echo "boost_libdir=/usr/lib" >> config/local.py && \
+	echo "cache_dir='../camotics/build/.scons_cache'" > config/local.py && \
+	echo "openssl_include='/usr/include/openssl'" >> config/local.py && \
+	echo "openssl_libdir='/usr/lib'" >> config/local.py && \
+	echo "boost_include='/usr/include'" >> config/local.py && \
+	echo "boost_libdir='/usr/lib'" >> config/local.py && \
 	echo "disable_local=True" >> config/local.py && \
 	echo "strict=False" >> config/local.py && \
 	echo "debug=False" >> config/local.py && \
