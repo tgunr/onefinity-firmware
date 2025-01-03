@@ -133,7 +133,7 @@ camotics: check-deps cbang
 		echo "Cloning camotics..."; \
 		mkdir -p rpi-share; \
 		git clone --recursive https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout a26af50604877e3c863091103b6667b207fa79ad; \
+		cd rpi-share/camotics && git checkout 3f112439a7268d783978710bcb41cbebc93d8b01; \
 	fi
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ] && [ ! -f "rpi-share/camotics/libgplan.dylib" ]; then \
 		echo "Creating minimal SConstruct..."; \
