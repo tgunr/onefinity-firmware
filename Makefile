@@ -67,50 +67,58 @@ CBANG_CACHE_DIR := rpi-share/camotics/build/.scons_cache
 cbang: check-deps $(CBANG_LIB)
 
 $(CBANG_LIB): $(CBANG_CONFIG_STAMP)
-	@echo "Building cbang..."
-	@cd rpi-share/cbang && \
-	mkdir -p ../camotics/build/.scons_cache && \
-	echo "import os" > SConstruct.local && \
-	echo "import SCons.Node" >> SConstruct.local && \
-	echo "env = Environment()" >> SConstruct.local && \
-	echo "env.Decider('MD5-timestamp')" >> SConstruct.local && \
-	echo "env.SetOption('max_drift', 1)" >> SConstruct.local && \
-	echo "env.SourceCode('.', None)" >> SConstruct.local && \
-	echo "env['CONFIGUREDIR'] = '#../camotics/build/config.cache'" >> SConstruct.local && \
-	echo "env['CONFIGURELOG'] = '#../camotics/build/config.log'" >> SConstruct.local && \
-	echo "env.CacheDir('../camotics/build/.scons_cache')" >> SConstruct.local && \
-	echo "SConsignFile('../camotics/build/.sconsign.dblite')" >> SConstruct.local && \
-	CPPFLAGS="-I/usr/include/openssl -I/usr/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
-	LDFLAGS="-L/usr/lib" \
-	CXXFLAGS="-std=c++11" \
-	scons -j 2 --implicit-cache --max-drift=1 build_dir=../camotics/build variant_dir=../camotics/build/variant && \
-	cp -r include/* ../camotics/build/include/ && \
-	cp -r src/* ../camotics/build/include/
+	@if [ ! -f "$(CBANG_LIB)" ]; then \
+		echo "Building cbang..."; \
+		cd rpi-share/cbang && \
+		mkdir -p ../camotics/build/.scons_cache && \
+		echo "import os" > SConstruct.local && \
+		echo "import SCons.Node" >> SConstruct.local && \
+		echo "env = Environment()" >> SConstruct.local && \
+		echo "env.Decider('MD5-timestamp')" >> SConstruct.local && \
+		echo "env.SetOption('max_drift', 1)" >> SConstruct.local && \
+		echo "env.SourceCode('.', None)" >> SConstruct.local && \
+		echo "env['CONFIGUREDIR'] = '#../camotics/build/config.cache'" >> SConstruct.local && \
+		echo "env['CONFIGURELOG'] = '#../camotics/build/config.log'" >> SConstruct.local && \
+		echo "env.CacheDir('../camotics/build/.scons_cache')" >> SConstruct.local && \
+		echo "SConsignFile('../camotics/build/.sconsign.dblite')" >> SConstruct.local && \
+		CPPFLAGS="-I/usr/include/openssl -I/usr/include -DCBANG_LOG_LEVEL=0 -DCBANG_LOG_RAW=0 -DCBANG_LOG_INFO=0 -DCBANG_LOG_DEBUG=0 -DCBANG_LOG_ERROR=0 -DCBANG_THROW=throw -DCBANG_SSTR=std::to_string -DCBANG_LOG_RAW_STREAM=std::cout" \
+		LDFLAGS="-L/usr/lib" \
+		CXXFLAGS="-std=c++11" \
+		scons -j 2 --implicit-cache --max-drift=1 build_dir=../camotics/build variant_dir=../camotics/build/variant && \
+		cp -r include/* ../camotics/build/include/ && \
+		cp -r src/* ../camotics/build/include/; \
+	else \
+		echo "cbang already built, skipping..."; \
+	fi
 
 $(CBANG_CONFIG_STAMP): | rpi-share/cbang
-	@echo "Configuring cbang..."
-	@mkdir -p rpi-share/camotics/build/include rpi-share/camotics/build/variant rpi-share/camotics/build/config.cache
-	@cd rpi-share/cbang && \
-	echo "cache_dir='../camotics/build/.scons_cache'" > config/local.py && \
-	echo "variant_dir='../camotics/build/variant'" >> config/local.py && \
-	echo "implicit_cache=True" >> config/local.py && \
-	echo "max_drift=1" >> config/local.py && \
-	echo "openssl_include='/usr/include/openssl'" >> config/local.py && \
-	echo "openssl_libdir='/usr/lib'" >> config/local.py && \
-	echo "boost_include='/usr/include'" >> config/local.py && \
-	echo "boost_libdir='/usr/lib'" >> config/local.py && \
-	echo "disable_local=True" >> config/local.py && \
-	echo "strict=False" >> config/local.py && \
-	echo "debug=False" >> config/local.py && \
-	echo "optimize=True" >> config/local.py && \
-	echo "disable_logging=True" >> config/local.py && \
-	echo "disable_feature_log=True" >> config/local.py && \
-	echo "disable_feature_stream=True" >> config/local.py && \
-	echo "disable_feature_throw=True" >> config/local.py && \
-	echo "disable_feature_sstr=True" >> config/local.py && \
-	echo "disable_feature_exception=True" >> config/local.py && \
-	echo "disable_feature_iostream=True" >> config/local.py && \
-	touch ../camotics/build/.config_stamp
+	@if [ ! -f "$(CBANG_CONFIG_STAMP)" ]; then \
+		echo "Configuring cbang..."; \
+		mkdir -p rpi-share/camotics/build/include rpi-share/camotics/build/variant rpi-share/camotics/build/config.cache; \
+		cd rpi-share/cbang && \
+		echo "cache_dir='../camotics/build/.scons_cache'" > config/local.py && \
+		echo "variant_dir='../camotics/build/variant'" >> config/local.py && \
+		echo "implicit_cache=True" >> config/local.py && \
+		echo "max_drift=1" >> config/local.py && \
+		echo "openssl_include='/usr/include/openssl'" >> config/local.py && \
+		echo "openssl_libdir='/usr/lib'" >> config/local.py && \
+		echo "boost_include='/usr/include'" >> config/local.py && \
+		echo "boost_libdir='/usr/lib'" >> config/local.py && \
+		echo "disable_local=True" >> config/local.py && \
+		echo "strict=False" >> config/local.py && \
+		echo "debug=False" >> config/local.py && \
+		echo "optimize=True" >> config/local.py && \
+		echo "disable_logging=True" >> config/local.py && \
+		echo "disable_feature_log=True" >> config/local.py && \
+		echo "disable_feature_stream=True" >> config/local.py && \
+		echo "disable_feature_throw=True" >> config/local.py && \
+		echo "disable_feature_sstr=True" >> config/local.py && \
+		echo "disable_feature_exception=True" >> config/local.py && \
+		echo "disable_feature_iostream=True" >> config/local.py && \
+		touch ../camotics/build/.config_stamp; \
+	else \
+		echo "cbang already configured, skipping..."; \
+	fi
 
 rpi-share/cbang:
 	@echo "Cloning cbang..."
@@ -125,7 +133,8 @@ camotics: check-deps cbang
 		echo "Cloning camotics..."; \
 		mkdir -p rpi-share; \
 		git clone https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout v1.2.0; \
+		cd rpi-share/camotics && git checkout v1.2.0 && \
+		git submodule update --init --recursive; \
 	fi
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ] && [ ! -f "rpi-share/camotics/libgplan.dylib" ]; then \
 		echo "Creating minimal SConstruct..."; \
