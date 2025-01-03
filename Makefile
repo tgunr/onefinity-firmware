@@ -86,9 +86,9 @@ cbang: check-deps
 			CPPFLAGS="-I/opt/homebrew/opt/openssl/include -I/opt/homebrew/include -I/usr/local/include" \
 			LDFLAGS="-L/opt/homebrew/opt/openssl/lib -L/opt/homebrew/lib -L/usr/local/lib" \
 			CXXFLAGS="-std=c++11" \
-			scons -j 8 build_dir=../camotics/build; \
+			scons -j 8 build_dir=../camotics/build --cache-disable; \
 		else \
-			cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build; \
+			cd rpi-share/cbang && scons -j 8 build_dir=../camotics/build --cache-disable; \
 		fi && \
 		cd rpi-share/cbang && cp -r include/* ../camotics/build/include/ && \
 		cd rpi-share/cbang && cp -r src/* ../camotics/build/include/; \
