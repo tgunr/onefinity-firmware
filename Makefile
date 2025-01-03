@@ -202,7 +202,7 @@ update: pkg
 
 build/templates.pug: $(TEMPLS)
 	mkdir -p build
-	cat $(TEMPLS) >$@
+	cat $(TEMPLS) >$@ 
 
 node_modules: package.json
 	npm install && touch node_modules
