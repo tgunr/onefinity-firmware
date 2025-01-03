@@ -42,21 +42,13 @@ all: $(HTML) $(RESOURCES)
 # Check for required build tools and install if missing
 check-deps:
 	@echo "Checking build dependencies..."
-	@if [ "$(shell uname)" = "Darwin" ]; then \
-		which scons > /dev/null || (echo "Installing scons..." && brew install scons); \
-		which g++ > /dev/null || (echo "Installing g++..." && brew install gcc); \
-		which git > /dev/null || (echo "Installing git..." && brew install git); \
-		which python3 > /dev/null || (echo "Installing python3..." && brew install python3); \
-		brew list openssl > /dev/null || (echo "Installing openssl..." && brew install openssl); \
-	else \
-		which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons); \
-		which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential); \
-		which git > /dev/null || (echo "Installing git..." && apt-get install -y git); \
-		dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev); \
-		dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev); \
-		dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev); \
-		dpkg -l | grep binutils-dev > /dev/null || (echo "Installing binutils-dev..." && apt-get install -y binutils-dev); \
-	fi
+	@which scons > /dev/null || (echo "Installing scons..." && apt-get install -y scons)
+	@which g++ > /dev/null || (echo "Installing build-essential..." && apt-get install -y build-essential)
+	@which git > /dev/null || (echo "Installing git..." && apt-get install -y git)
+	@dpkg -l | grep python3-dev > /dev/null || (echo "Installing python3-dev..." && apt-get install -y python3-dev)
+	@dpkg -l | grep python-dev > /dev/null || (echo "Installing python-dev..." && apt-get install -y python-dev)
+	@dpkg -l | grep libssl-dev > /dev/null || (echo "Installing libssl-dev..." && apt-get install -y libssl-dev)
+	@dpkg -l | grep binutils-dev > /dev/null || (echo "Installing binutils-dev..." && apt-get install -y binutils-dev)
 
 # Build cbang dependency
 CBANG_CONFIG_FILE := rpi-share/cbang/config/local.py
@@ -132,7 +124,7 @@ camotics: check-deps cbang
 	@if [ ! -d "rpi-share/camotics" ]; then \
 		echo "Cloning camotics..."; \
 		mkdir -p rpi-share; \
-		git clone --recursive https://github.com/CauldronDevelopmentLLC/camotics.git rpi-share/camotics; \
+		git clone --recursive https://github.com/CauldronDevelopmentLLC/CAMotics.git rpi-share/camotics; \
 		cd rpi-share/camotics && git checkout pi; \
 	fi
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ] && [ ! -f "rpi-share/camotics/libgplan.dylib" ]; then \
