@@ -140,8 +140,8 @@ camotics: check-deps cbang
 		echo 'env.Append(CPPPATH = ["#/src", "#/build/include"])' >> SConstruct && \
 		echo 'env.Append(LIBPATH = ["#/build/lib"])' >> SConstruct && \
 		echo 'env.Append(LIBS = ["cbang"])' >> SConstruct && \
-		echo 'env.VariantDir("build/gplan", "src/gcode/plan", duplicate=0)' >> SConstruct && \
-		echo 'sources = ["build/gplan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
+		echo 'env.VariantDir("build/gplan", "src", duplicate=0)' >> SConstruct && \
+		echo 'sources = ["build/gplan/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
 		scons -j 2 --implicit-cache --max-drift=1; \
 	else \
