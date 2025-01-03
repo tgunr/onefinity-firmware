@@ -132,14 +132,16 @@ camotics: check-deps cbang
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ]; then \
 		echo "Building camotics..."; \
 		cd rpi-share/camotics && \
+		mkdir -p build/include/cbang && \
+		cp -r ../cbang/src/cbang/* build/include/cbang/ && \
 		echo 'import os' > SConstruct && \
 		echo 'env = Environment()' >> SConstruct && \
 		echo 'env.Decider("MD5-timestamp")' >> SConstruct && \
 		echo 'env.SetOption("max_drift", 1)' >> SConstruct && \
 		echo 'env.SourceCode(".", None)' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
-		echo 'env.Append(CPPPATH = ["#/src", "#/build/include"])' >> SConstruct && \
-		echo 'env.Append(LIBPATH = ["#/build/lib"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["#/src", "#/build/include", "../cbang/src"])' >> SConstruct && \
+		echo 'env.Append(LIBPATH = ["#/build/lib", "../cbang/lib"])' >> SConstruct && \
 		echo 'env.Append(LIBS = ["cbang"])' >> SConstruct && \
 		echo 'env.VariantDir("build/gplan", "src", duplicate=0)' >> SConstruct && \
 		echo 'sources = ["build/gplan/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
