@@ -153,7 +153,7 @@ camotics: check-deps cbang
 		echo "camotics already built, skipping..."; \
 	fi
 
-gplan: | rpi-share/camotics
+gplan: check-deps cbang | rpi-share/camotics
 	@if [ ! -f "$(GPLAN_TARGET)" ]; then \
 		echo "Building gplan..."; \
 		cd rpi-share/camotics && \
@@ -174,8 +174,8 @@ gplan: | rpi-share/camotics
 		echo 'sources = ["src/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
 		scons -j 2 --implicit-cache --max-drift=1 && \
-		cp libgplan.so ../.. && \
-		cp libgplan.so ../../src/py/camotics/; \
+		mkdir -p ../../src/py/camotics && \
+		cp libgplan.so ../../src/py/camotics/gplan.so; \
 	else \
 		echo "gplan already built, skipping..."; \
 	fi
