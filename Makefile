@@ -125,7 +125,7 @@ camotics: check-deps cbang
 		echo "Cloning camotics..."; \
 		mkdir -p rpi-share; \
 		git clone --recursive https://github.com/tgunr/CAMotics.git rpi-share/camotics; \
-		cd rpi-share/camotics && git checkout v1.4.2-onefinity; \
+		cd rpi-share/camotics && git checkout master; \
 	fi
 	@if [ ! -f "rpi-share/camotics/libgplan.so" ]; then \
 		echo "Creating minimal SConstruct..."; \
@@ -141,7 +141,7 @@ camotics: check-deps cbang
 		echo 'env.Append(LIBPATH = ["#/build/lib"])' >> SConstruct && \
 		echo 'env.Append(LIBS = ["cbang"])' >> SConstruct && \
 		echo 'env.VariantDir("build/gplan", "src/gcode/plan", duplicate=0)' >> SConstruct && \
-		echo 'sources = ["build/gplan/" + x for x in ["GCode.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp", "Plan.cpp"]]' >> SConstruct && \
+		echo 'sources = ["build/gplan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
 		scons -j 2 --implicit-cache --max-drift=1; \
 	else \
