@@ -153,10 +153,32 @@ camotics: check-deps cbang
 		echo "camotics already built, skipping..."; \
 	fi
 
-gplan: check-deps camotics bbserial
-	mkdir -p src/py/camotics
-	cd rpi-share/camotics && scons -j 8
-	cp rpi-share/camotics/libgplan.so src/py/camotics/gplan.so
+gplan: | rpi-share/camotics
+	@if [ ! -f "$(GPLAN_TARGET)" ]; then \
+		echo "Building gplan..."; \
+		cd rpi-share/camotics && \
+		mkdir -p build/include/cbang && \
+		cp -r ../cbang/src/cbang/* build/include/cbang/ && \
+		echo '#include <cbang/Exception.h>' > build/include/cbang/defines.h && \
+		echo '#define THROW(x) throw cb::Exception(x)' >> build/include/cbang/defines.h && \
+		echo '#define LOG_DEBUG(level, x) do {} while(0)' >> build/include/cbang/defines.h && \
+		echo '#define SSTR(x) std::string(x)' >> build/include/cbang/defines.h && \
+		echo 'import os' > SConstruct && \
+		echo 'env = Environment()' >> SConstruct && \
+		echo 'env.Decider("MD5-timestamp")' >> SConstruct && \
+		echo 'env.SetOption("max_drift", 1)' >> SConstruct && \
+		echo 'env.SourceCode(".", None)' >> SConstruct && \
+		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["#/src", "#/build/include", "../cbang/src"])' >> SConstruct && \
+		echo 'env.Append(LIBPATH = ["#/build/lib", "../cbang/lib"])' >> SConstruct && \
+		echo 'sources = ["src/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
+		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
+		scons -j 2 --implicit-cache --max-drift=1 && \
+		cp libgplan.so ../.. && \
+		cp libgplan.so ../../src/py/camotics/; \
+	else \
+		echo "gplan already built, skipping..."; \
+	fi
 
 pkg: gplan
 	python3 setup.py bdist_deb
