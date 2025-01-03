@@ -72,8 +72,8 @@ cbang: check-deps
 		if [ "$(shell uname)" = "Darwin" ]; then \
 			cd rpi-share/cbang && \
 			mkdir -p ../camotics/build/include && \
-			echo "openssl_include=/opt/homebrew/opt/openssl/include" > config/local.py && \
-			echo "openssl_libdir=/opt/homebrew/opt/openssl/lib" >> config/local.py && \
+			echo "openssl_include=/usr/include/openssl" > config/local.py && \
+			echo "openssl_libdir=/usr/lib" >> config/local.py && \
 			echo "boost_include=/opt/homebrew/include" >> config/local.py && \
 			echo "boost_libdir=/opt/homebrew/lib" >> config/local.py && \
 			echo "osx_min_ver=10.10" >> config/local.py && \
