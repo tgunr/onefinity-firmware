@@ -157,8 +157,8 @@ gplan: check-deps | rpi-share/camotics
 	@if [ ! -f "$(GPLAN_TARGET)" ]; then \
 		echo "Building gplan..."; \
 		cd rpi-share/camotics && \
-		git checkout master && \
 		mkdir -p build/include/cbang && \
+		cp -r ../cbang/src/cbang/* build/include/cbang/ && \
 		echo '#include <stdexcept>' > build/include/cbang/Exception.h && \
 		echo 'namespace cb { typedef std::runtime_error Exception; }' >> build/include/cbang/Exception.h && \
 		echo '#include <cbang/Exception.h>' > build/include/cbang/defines.h && \
