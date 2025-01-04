@@ -153,12 +153,13 @@ camotics: check-deps cbang
 		echo "camotics already built, skipping..."; \
 	fi
 
-gplan: check-deps cbang | rpi-share/camotics
+gplan: check-deps | rpi-share/camotics
 	@if [ ! -f "$(GPLAN_TARGET)" ]; then \
 		echo "Building gplan..."; \
 		cd rpi-share/camotics && \
 		mkdir -p build/include/cbang && \
-		cp -r ../cbang/src/cbang/* build/include/cbang/ && \
+		echo '#include <stdexcept>' > build/include/cbang/Exception.h && \
+		echo 'namespace cb { typedef std::runtime_error Exception; }' >> build/include/cbang/Exception.h && \
 		echo '#include <cbang/Exception.h>' > build/include/cbang/defines.h && \
 		echo '#define THROW(x) throw cb::Exception(x)' >> build/include/cbang/defines.h && \
 		echo '#define LOG_DEBUG(level, x) do {} while(0)' >> build/include/cbang/defines.h && \
@@ -169,8 +170,8 @@ gplan: check-deps cbang | rpi-share/camotics
 		echo 'env.SetOption("max_drift", 1)' >> SConstruct && \
 		echo 'env.SourceCode(".", None)' >> SConstruct && \
 		echo 'env.Append(CCFLAGS = ["-O2", "-Wall", "-Werror", "-fPIC"])' >> SConstruct && \
-		echo 'env.Append(CPPPATH = ["#/src", "#/build/include", "../cbang/src"])' >> SConstruct && \
-		echo 'env.Append(LIBPATH = ["#/build/lib", "../cbang/lib"])' >> SConstruct && \
+		echo 'env.Append(CPPPATH = ["#/src", "#/build/include"])' >> SConstruct && \
+		echo 'env.Append(LIBS = ["boost_system", "boost_filesystem"])' >> SConstruct && \
 		echo 'sources = ["src/gcode/plan/" + x for x in ["LinePlanner.cpp", "PlannerConfig.cpp", "PlannerCommand.cpp", "Planner.cpp"]]' >> SConstruct && \
 		echo 'env.SharedLibrary("gplan", sources)' >> SConstruct && \
 		scons -j 2 --implicit-cache --max-drift=1 && \
