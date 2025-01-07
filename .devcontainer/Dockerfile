@@ -4,4 +4,4 @@
 ARG VARIANT=bullseye
 FROM mcr.microsoft.com/vscode/devcontainers/base:${VARIANT}
 COPY ./install_tools.sh /tmp/install_tools.sh
-RUN /tmp/install_tools.sh
+# RUN /tmp/install_tools.sh
