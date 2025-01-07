@@ -1,16 +1,16 @@
 {
     "files.exclude": {
-        "**/.git": true,
-        "**/.svn": true,
-        "**/.hg": true,
-        "**/CVS": true,
-        "**/.DS_Store": true,
-        "**/Thumbs.db": true,
-        "**/node_modules": true,
-        "**/build": true,
-        "**/dist": true,
-        "**/rpi-share": true,
-        "**/rpi-root": true
+        "**/.git": false,
+        "**/.svn": false,
+        "**/.hg": false,
+        "**/CVS": false,
+        "**/.DS_Store": false,
+        "**/Thumbs.db": false,
+        "**/node_modules": false,
+        "**/build": false,
+        "**/dist": false,
+        "**/rpi-share": false,
+        "**/rpi-root": false
     },
     "search.exclude": {
         "**/bower_components": true,
