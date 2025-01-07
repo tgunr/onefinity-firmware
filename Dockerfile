@@ -1,23 +1,34 @@
-# For more information, please refer to https://aka.ms/vscode-docker-python
-FROM python:3-slim
+# Use an ARM-compatible Debian image for kernel building
+FROM arm64v8/debian:bullseye
 
-# Keeps Python from generating .pyc files in the container
-ENV PYTHONDONTWRITEBYTECODE=1
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD curl --fail http://localhost:8000 || exit 1
 
-# Turns off buffering for easier container logging
-ENV PYTHONUNBUFFERED=1
+# Set environment variable for non-interactive installation
+ENV DEBIAN_FRONTEND=noninteractive
 
-# Install pip requirements
-COPY requirements.txt .
-RUN python -m pip install -r requirements.txt
+USER root
 
-WORKDIR /app
-COPY . /app
+# Install necessary packages for kernel building
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    libncurses-dev \
+    bison \
+    flex \
+    libssl-dev \
+    git \
+    wget \
+    bc \
+    libelf-dev \
+    && rm -rf /var/lib/apt/lists/*
 
-# Creates a non-root user with an explicit UID and adds permission to access the /app folder
-# For more info, please refer to https://aka.ms/vscode-docker-python-configure-containers
-RUN adduser -u 5678 --disabled-password --gecos "" appuser && chown -R appuser /app
-USER appuser
+# Set the working directory
+WORKDIR /workspace
 
-# During debugging, this entry point will be overridden. For more information, please refer to https://aka.ms/vscode-docker-python-debug
-CMD ["python", "setup.py"]
+# Create a user named 'dev'
+RUN useradd -m dev
+
+# Switch to the 'dev' user
+USER dev
+
+# Set default command
+CMD ["/bin/bash"]
