@@ -2,12 +2,16 @@
 set -e
 
 # Add additional package sources
-echo "deb http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list
-echo "deb http://security.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list
-echo "deb http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list
+if [ -e /etc/apt/sources.list ]; then
+    mv /etc/apt/sources.list /etc/apt/sources.list.save
+fi
+echo "deb https://deb.debian.org/debian bookworm main" > /etc/apt/sources.list
+echo "deb https://deb.debian.org/debian bookworm-updates main" >> /etc/apt/sources.list
+echo "deb https://security.debian.org/debian-security bookworm-security main" >> /etc/apt/sources.list
 
 # Install ARM toolchain and other packages
-apt-get update && apt-get install -y \
+sudo apt-get update
+sudo apt-get install -y \
     build-essential \
     gcc \
     g++ \
@@ -22,27 +26,54 @@ apt-get update && apt-get install -y \
     curl \
     unzip \
     python3-setuptools \
+    python3-yapf \
     bc \
     --no-install-recommends
 
-# Install older yapf version compatible with Debian 9
-python3 -m pip install 'yapf<0.32.0'
+# Set locale variables
+if [ -z "$LANG" ]; then
+    export LANG=en_US.UTF-8
+fi
+if [ -z "$LC_ALL" ]; then
+    export LC_ALL=en_US.UTF-8
+fi
 
-# Setup Node.js
+# Try to set system locale if we have sudo rights
+if command -v sudo >/dev/null 2>&1; then
+    # Install locales package if needed
+    if ! dpkg -l | grep -q locales; then
+        sudo apt-get install -y locales
+    fi
+    
+    # Generate locale if we have permission
+    if [ -w /etc/locale.gen ]; then
+        sudo locale-gen en_US.UTF-8
+    fi
+    
+    # Update system locale if command exists
+    if command -v update-locale >/dev/null 2>&1; then
+        sudo update-locale LANG=en_US.UTF-8 LC_ALL=en_US.UTF-8
+    fi
+fi
+
+# Install Node.js
 curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
-apt-get update && apt-get install -y nodejs --no-install-recommends
+sudo apt-get install -y nodejs --no-install-recommends
 
-# Setup compiler alternatives
-update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 50
-update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 50
+# Install GCC 10 packages
+sudo apt install gcc g++
+
+# Then run the update-alternatives commands
+#sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 50
+#sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 50
 
 # Cleanup
-apt-get clean
-rm -rf /var/lib/apt/lists/*
+sudo apt-get clean
+sudo rm -rf /var/lib/apt/lists/*
 
 # Setup SSH
-mkdir -p /root/.ssh
-cat > /root/.ssh/config <<- END
-Host onefinity
-        User bbmc
-END
+if [ ! -d /root/.ssh ]; then
+    sudo mkdir -p /root/.ssh
+fi
+sudo echo "Host onefinity" | sudo tee -a /root/.ssh/ssh_config
+sudo echo "        User bbmc" | sudo tee -a /root/.ssh/ssh_config
