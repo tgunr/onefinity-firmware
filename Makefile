@@ -100,6 +100,13 @@ $(TARGET_DIR)/%.html: src/pug/%.pug node_modules FORCE
 node_modules: package.json
 	npm cache clean --force && npm install --legacy-peer-deps && touch node_modules
 
+setup:
+	. ./set_env.sh
+
+build: setup
+	make ARCH=arm CROSS_COMPILE=aarch64-none-elf- bcm2711_defconfig
+	make -j$(sysctl -n hw.ncpu)
+
 clean:
 	@echo "The following files will be cleaned:"
 	@git clean -fd -n
