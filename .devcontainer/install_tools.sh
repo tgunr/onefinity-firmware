@@ -1,45 +1,46 @@
-#!/usr/bin/env -S bash -e
+#!/bin/bash
+set -e
 
-APT_PACKAGES=(
-	"build-essential"
-	"git"
-	"wget"
-	"binfmt-support"
-	"qemu"
-	"gcc-9"
-	"parted"
-	"udev"
-	"zerofree"
-	"gcc-avr"
-	"avr-libc"
-	"avrdude"
-	"python3"
-	"python3-pip"
-	"python3-tornado"
-	"inetutils-ping"
-	"curl"
-	"unzip"
-	"python3-setuptools"
-	"gcc-arm-linux-gnueabihf"
-	"bc"
-	"vim"
-	"locate"
-	"sudo"
-    "sshpass"
-)
+# Add additional package sources
+echo "deb http://deb.debian.org/debian bullseye main contrib non-free" > /etc/apt/sources.list
+echo "deb http://security.debian.org/debian-security bullseye-security main contrib non-free" >> /etc/apt/sources.list
+echo "deb http://deb.debian.org/debian bullseye-updates main contrib non-free" >> /etc/apt/sources.list
 
-apt-get update
-apt-get upgrade -y
+# Install ARM toolchain and other packages
+apt-get update && apt-get install -y \
+    build-essential \
+    gcc \
+    g++ \
+    gcc-avr \
+    gcc-arm-linux-gnueabihf \
+    binutils-avr \
+    avr-libc \
+    avrdude \
+    python3 \
+    python3-pip \
+    python3-tornado \
+    curl \
+    unzip \
+    python3-setuptools \
+    bc \
+    --no-install-recommends
 
-apt-get install -y "${APT_PACKAGES[@]}"
+# Install older yapf version compatible with Debian 9
+python3 -m pip install 'yapf<0.32.0'
 
-update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-9 9
+# Setup Node.js
+curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
+apt-get update && apt-get install -y nodejs --no-install-recommends
 
-/usr/bin/python3 -m pip install -U yapf
+# Setup compiler alternatives
+update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 50
+update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 50
 
-curl -fsSL https://deb.nodesource.com/setup_18.x | bash -
-apt-get install -y nodejs
+# Cleanup
+apt-get clean
+rm -rf /var/lib/apt/lists/*
 
+# Setup SSH
 mkdir -p /root/.ssh
 cat > /root/.ssh/config <<- END
 Host onefinity

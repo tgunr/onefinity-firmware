@@ -1,18 +1,25 @@
 # Compile flags
 CC = avr-g++
 
-COMMON = -mmcu=$(MCU) -flto -fwhole-program
+COMMON = -mmcu=$(MCU)
 
 CFLAGS += $(COMMON)
 CFLAGS += -Wall -Werror
 CFLAGS += -Wno-error=strict-aliasing # for _invsqrt
-CFLAGS += -std=gnu++98 -DF_CPU=$(CLOCK)UL -O3
+CFLAGS += -std=gnu++11 -DF_CPU=$(CLOCK)UL -O3
 CFLAGS += -funsigned-bitfields -fpack-struct -fshort-enums -funsigned-char
 CFLAGS += -MD -MP -MT $@ -MF build/dep/$(@F).d
 CFLAGS += -D__STDC_LIMIT_MACROS
+CFLAGS += -mrelax -ffunction-sections -fdata-sections
+CFLAGS += -fno-exceptions -fno-rtti -fno-threadsafe-statics
+CFLAGS += -finline-limit=3 -fno-inline-small-functions
+CFLAGS += -mcall-prologues
+CFLAGS += -fmerge-all-constants -fno-unroll-loops
+CFLAGS += -Wl,--section-start=.text=0x0
 
 # Linker flags
 LDFLAGS += $(COMMON) -Wl,-u,vfprintf -lprintf_flt -lm
+LDFLAGS += -Wl,--relax,--gc-sections,--print-gc-sections
 LIBS += -lm
 
 # EEPROM flags
@@ -65,7 +72,6 @@ size: $(PROJECT).elf
 
 data-usage: $(PROJECT).elf
 	avr-nm -CS --size-sort -t decimal $(PROJECT).elf | grep ' [BbDd] '
-
 
 prog-usage: $(PROJECT).elf
 	avr-nm -CS --size-sort -t decimal $(PROJECT).elf | grep -v ' [BbDd] '

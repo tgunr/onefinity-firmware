@@ -1,7 +1,10 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the README at:
 // https://github.com/microsoft/vscode-dev-containers/blob/v0.241.1/containers/debian
 {
-    "name": "Debian",
+    "name": "Onefinity Firmware Dev",
+    "hostRequirements": {
+        "storage": "50gb"
+    },
     "build": {
         "dockerfile": "Dockerfile",
         // Update 'VARIANT' to pick an Debian version: bullseye, buster
@@ -13,7 +16,8 @@
     "runArgs": [
         // The primary reason this is here is to enable loopback devices,
         // which are used for mounting disk images during builds, etc.
-        "--privileged"
+        "--privileged",
+        "--cap-add=SYS_ADMIN"
     ],
     // Use 'forwardPorts' to make a list of ports inside the container available locally.
     // "forwardPorts": [],
@@ -23,14 +27,32 @@
     "features": {
         "sshd": "latest"
     },
-    "extensions": [
-        "ms-azuretools.vscode-docker",
-        "dbaeumer.vscode-eslint",
-        "eamodio.gitlens",
-        "ms-vscode.makefile-tools",
-        "ms-python.python",
-        "svelte.svelte-vscode",
-        "redhat.vscode-yaml",
-        "ryu1kn.partial-diff"
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                "ms-azuretools.vscode-docker",
+                "dbaeumer.vscode-eslint",
+                "eamodio.gitlens",
+                "ms-vscode.makefile-tools",
+                "ms-python.python",
+                "svelte.svelte-vscode",
+                "redhat.vscode-yaml",
+                "ryu1kn.partial-diff",
+                "ms-python.python",
+                "ms-vscode.cpptools",
+                "axetroy.vscode-git-file-size",
+                "github.vscode-git-lfs",
+                "eamodio.gitlens",
+                "mhutchie.git-graph",
+                "ms-vscode.cpptools-extension-pack"
+            ]
+        }
+    },
+    "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+    "remoteUser": "root",
+    "mounts": [
+        "type=tmpfs,destination=/tmp",
+        "type=bind,source=/dev,target=/dev"
     ]
 }

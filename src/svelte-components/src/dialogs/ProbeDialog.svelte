@@ -71,9 +71,12 @@
 
     export let open;
     export let probeType: "xyz" | "z";
+    export let isRotaryActive: Boolean;
     let currentStep: Step = "None";
     let cutterDiameterString: string = "";
     let cutterDiameterMetric: number;
+    let cutterDiameterRotaryString: string = "";
+    let cutterDiameterRotaryMetric: number;
     let showCancelButton = true;
     let steps: Step[] = [];
     let nextButton = {
@@ -86,9 +89,19 @@
     $: cutterDiameterMetric = numberWithUnit
         .parse(cutterDiameterString)
         ?.toMetric();
+    
+    $: cutterDiameterRotaryMetric = numberWithUnit
+        .parse(cutterDiameterRotaryString)
+        ?.toMetric();
 
     $: if (open) {
-        cutterDiameterString = localStorage.getItem("cutterDiameter") ?? "";
+        if(!cutterDiameterString){
+            cutterDiameterString = localStorage.getItem("cutterDiameter") ?? "";
+        }
+
+        if(!cutterDiameterRotaryString){
+            cutterDiameterRotaryString = localStorage.getItem("cutterDiameterRotary") ?? "";
+        }
 
         // Svelte appears not to like it when you invoke
         // an async function from a reactive statement, so we
@@ -98,6 +111,14 @@
 
     $: if (cutterDiameterString) {
         updateButtons();
+    }
+
+    $: if (cutterDiameterRotaryString) {
+        updateButtons();
+    }
+
+    $: if(isRotaryActive){   
+        stepLabels["PlaceProbeBlock"] = "Start Probe";
     }
 
     async function begin() {
@@ -110,14 +131,16 @@
             const enableSafety = $Config.settings["probing-prompts"];
 
             steps = [
-                enableSafety ? "CheckProbe" : undefined,
-                probeType === "xyz" ? "BitDimensions" : undefined,
+                enableSafety && !isRotaryActive ? "CheckProbe" : undefined,
+                probeType === "xyz" || isRotaryActive ? "BitDimensions" : undefined,
                 enableSafety ? "PlaceProbeBlock" : undefined,
                 "Probe",
                 "Done",
             ].filter<Step>(isStep);
 
-            await stepCompleted("CheckProbe", probeContacted);
+            if(!isRotaryActive){
+                await stepCompleted("CheckProbe", probeContacted);
+            }
 
             if (probeType === "xyz") {
                 await stepCompleted("BitDimensions", userAcknowledged);
@@ -127,11 +150,19 @@
                 );
             }
 
+            if (isRotaryActive) {
+                await stepCompleted("BitDimensions", userAcknowledged);
+                localStorage.setItem(
+                    "cutterDiameterRotary",
+                    numberWithUnit.normalize(cutterDiameterRotaryString)
+                );
+            }
+
             await stepCompleted("PlaceProbeBlock", userAcknowledged);
             await stepCompleted("Probe", probingComplete, probingFailed);
             await stepCompleted("Done", userAcknowledged);
 
-            if (probeType === "xyz") {
+            if (probeType === "xyz" || isRotaryActive) {
                 ControllerMethods.gotoZero("xy");
             }
         } catch (err) {
@@ -212,7 +243,7 @@
                 break;
 
             case "BitDimensions":
-                nextButton.disabled = !isFinite(cutterDiameterMetric);
+                nextButton.disabled = probeType === 'xyz' ? !isFinite(cutterDiameterMetric) : !isFinite(cutterDiameterRotaryMetric);
                 break;
 
             case "Done":
@@ -227,16 +258,20 @@
     }
 
     function executeProbe() {
-        const probeBlockWidth = $Config.probe["probe-xdim"];
-        const probeBlockLength = $Config.probe["probe-ydim"];
-        const probeBlockHeight = $Config.probe["probe-zdim"];
-        const slowSeek = $Config.probe["probe-slow-seek"];
-        const fastSeek = $Config.probe["probe-fast-seek"];
+
+        const config = isRotaryActive ? $Config["probe-rotary"] : $Config.probe;
+
+        const probeBlockWidth = config["probe-xdim"];
+        const probeBlockLength = config["probe-ydim"];
+        const probeBlockHeight = config["probe-zdim"];
+        const slowSeek = config["probe-slow-seek"];
+        const fastSeek = config["probe-fast-seek"];
 
         const cutterLength = 12.7;
         const zLift = 1;
-        const xOffset = probeBlockWidth + cutterDiameterMetric / 2.0;
-        const yOffset = probeBlockLength + cutterDiameterMetric / 2.0;
+        const cutterDiameter = isRotaryActive ? cutterDiameterRotaryMetric : cutterDiameterMetric;
+        const xOffset = probeBlockWidth + cutterDiameter / 2.0;
+        const yOffset = probeBlockLength + cutterDiameter / 2.0;
         const zOffset = probeBlockHeight;
 
         if (probeType === "z") {
@@ -323,42 +358,62 @@
                     Attach the probe magnet to the collet, then touch the probe
                     block to the bit.
                 </p>
-
-                <Icon
-                    data={probeType === "xyz" ? CheckXYZ : CheckZ}
-                    size="300px"
-                    class="probe-icon-svg"
-                />
+                {#if !isRotaryActive} 
+                    <Icon
+                        data={probeType === "xyz" ? CheckXYZ : CheckZ}
+                        size="300px"
+                        class="probe-icon-svg"
+                    />
+                {/if}
             {:else if currentStep === "BitDimensions"}
-                <TextFieldWithOptions
-                    label="Cutter diameter"
-                    variant="filled"
-                    spellcheck="false"
-                    style="width: 100%;"
-                    bind:value={cutterDiameterString}
-                    options={[imperialBits, metricBits]}
-                    valid={isFinite(cutterDiameterMetric)}
-                    helperText={`Examples: 1/2", 10 mm, 0.25 in`}
-                />
+                {#if probeType === "xyz"} 
+                    <TextFieldWithOptions
+                        label="Cutter diameter"
+                        variant="filled"
+                        spellcheck="false"
+                        style="width: 100%;"
+                        bind:value={cutterDiameterString}
+                        options={[imperialBits, metricBits]}
+                        valid={isFinite(cutterDiameterMetric)}
+                        helperText={`Examples: 1/2", 10 mm, 0.25 in`}
+                    />
 
-                <Icon data={BitDiameter} size="150px" class="probe-icon-svg" />
+                    <Icon data={BitDiameter} size="150px" class="probe-icon-svg" />
+                {:else}
+                    <TextFieldWithOptions
+                        label="Cutter diameter"
+                        variant="filled"
+                        spellcheck="false"
+                        style="width: 100%;"
+                        bind:value={cutterDiameterRotaryString}
+                        options={[imperialBits, metricBits]}
+                        valid={isFinite(cutterDiameterRotaryMetric)}
+                        helperText={`Examples: 1/2", 10 mm, 0.25 in`}
+                    />
+
+                    <Icon data={BitDiameter} size="150px" class="probe-icon-svg" />
+                {/if}
             {:else if currentStep === "PlaceProbeBlock"}
                 <p>
-                    {#if probeType === "xyz"}
+                    {#if probeType === "xyz" && !isRotaryActive}
                         Place the probe block face up, on the lower-left corner
                         of your workpiece.
+                    {:else if probeType === "xyz" && isRotaryActive}
+                        You are about to start the probing of rotary. <br/><br/> <strong>Note: </strong><br/>Position the bit above the probe and attach the probe magnet.
                     {:else}
                         Place the probe block face down, with the bit above the
                         recess.
                     {/if}
                 </p>
 
-                <Icon
-                    data={probeType === "xyz" ? PlaceXYZ : PlaceZ}
-                    width="304px"
-                    height="129px"
-                    class="probe-icon-svg"
-                />
+                {#if !isRotaryActive} 
+                    <Icon
+                        data={probeType === "xyz" ? PlaceXYZ : PlaceZ}
+                        width="304px"
+                        height="129px"
+                        class="probe-icon-svg"
+                    />
+                {/if}
 
                 <p>
                     The probing procedure will begin as soon as you click
@@ -381,16 +436,24 @@
                         above the probe block, and try again.
                     </p>
                 {:else}
-                    <p>Don't forget to put away the probe!</p>
+                    <p>
+                        {#if isRotaryActive}
+                            Probing complete
+                        {:else}
+                            Don't forget to put away the probe!
+                        {/if}
+                    </p>
 
-                    <Icon
-                        data={probeType === "xyz" ? PutAwayXYZ : PutAwayZ}
-                        width="329px"
-                        height="256px"
-                        class="probe-icon-svg"
-                    />
+                    {#if !isRotaryActive} 
+                        <Icon
+                            data={probeType === "xyz" ? PutAwayXYZ : PutAwayZ}
+                            width="329px"
+                            height="256px"
+                            class="probe-icon-svg"
+                        />
+                    {/if}
 
-                    {#if probeType === "xyz"}
+                    {#if probeType === "xyz" || isRotaryActive}
                         <p>The machine will now move to the XY origin.</p>
 
                         <p>Watch your hands!</p>

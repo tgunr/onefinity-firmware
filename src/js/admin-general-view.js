@@ -39,14 +39,83 @@ module.exports = {
       z_slider: false,
       z_slider_variant: " ",
       config: "",
+      current_time: null,
+      current_timezone: "",
+      selected_timezone: "",
+      time_zones: [],
+      is_loading_time: false,
+      selected_date: null,
+      selected_hours: "",
+      selected_minutes: "",
+      selected_meridiem: "AM",
     };
+  },
+
+  created: function () {
+    this.fetch_current_time();
   },
 
   ready: function () {
     this.autoCheckUpgrade = this.config.admin["auto-check-upgrade"];
   },
 
+  computed: {
+    get_current_time: function () {
+      try {
+        if (this.current_time == null) {
+          return "Loading...";
+        }
+        const options = {
+          year: "numeric",
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: this.config.admin.time_format !== true,
+        };
+        if (this.current_timezone != "") {
+          options.timeZone = this.current_timezone;
+        }
+        const formatter = new Intl.DateTimeFormat("en-US", options);
+        return formatter.format(this.current_time);
+      } catch (error) {
+        console.error(error);
+        return "Error loading time...";
+      }
+    },
+  },
+
   methods: {
+    fetch_current_time: async function () {
+      try {
+        this.is_loading_time = true;
+        const response = await api.get("time");
+        if (response.timeinfo) {
+          const { timeinfo, timezones } = response;
+
+          this.time_zones = timezones.split("\n");
+
+          const local_time = timeinfo.match(/Local time:\s+([A-Za-z]{3}\s\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})/);
+          const time_zone = timeinfo.match(/Time zone:\s*([^ ]*)/);
+
+          if (local_time) {
+            this.current_time = new Date(local_time[1]);
+          }
+
+          if (time_zone) {
+            this.current_timezone = time_zone[1];
+            this.selected_timezone = time_zone[1];
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching time:", error);
+        alert("Error fetching time");
+      } finally {
+        this.is_loading_time = false;
+      }
+    },
+
     backup: function () {
       document.getElementById("download-target").src =
         "/api/config/download/" +
@@ -143,6 +212,76 @@ module.exports = {
     change_auto_check_upgrade: function () {
       this.config.admin["auto-check-upgrade"] = this.autoCheckUpgrade;
       this.$dispatch("config-changed");
+    },
+
+    change_time_format: async function () {
+      try {
+        await api.put("config/save", this.config);
+      } catch (error) {
+        console.error("Update failed:", error);
+        alert("Update failed");
+      }
+    },
+
+    change_date_time: async function () {
+      if (!this.selected_date || !this.selected_hours === "" || !this.selected_minutes === "") {
+        alert("Please enter all required fields.");
+        return;
+      }
+
+      let hours = parseInt(this.selected_hours, 10);
+      const minutes = parseInt(this.selected_minutes, 10);
+
+      if (this.config.admin.time_format) {
+        if (hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+          return alert("Invalid Time");
+        }
+      } else {
+        if (hours < 1 || hours > 12 || minutes < 0 || minutes > 59) {
+          return alert("Invalid Time");
+        }
+        if (this.selected_meridiem === "PM" && hours !== 12) {
+          hours += 12;
+        } else if (this.selected_meridiem === "AM" && hours === 12) {
+          hours = 0;
+        }
+      }
+
+      try {
+        const datetime = `${this.selected_date} ${hours.toString().padStart(2, "0")}:${minutes
+          .toString()
+          .padStart(2, "0")}:00`;
+
+        const response = await api.put("time", { datetime });
+
+        if (response == "ok") {
+          alert("Date/Time updated successfully.");
+          this.fetch_current_time();
+        } else {
+          throw response;
+        }
+      } catch (error) {
+        console.error(error);
+        alert("Error updating time");
+      }
+    },
+
+    change_timezone: async function () {
+      try {
+        if (this.selected_timezone == this.current_timezone) return;
+        if (this.selected_timezone == null) return;
+
+        const response = await api.put("time", { timezone: this.selected_timezone });
+
+        if (response == "ok") {
+          alert("Time zone updated successfully.");
+          this.fetch_current_time();
+        } else {
+          throw response;
+        }
+      } catch (error) {
+        alert("Error updating time zone");
+      }
     },
   },
 };

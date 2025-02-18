@@ -35,6 +35,6 @@ setup(
         'scripts/edit-boot-config',
         'scripts/browser',
         ],
-    install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2 watchdog'.split(),
+    install_requires = 'tornado sockjs-tornado pyserial pyudev smbus2'.split(),
     zip_safe = False,
     )

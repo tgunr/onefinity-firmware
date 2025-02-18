@@ -14,11 +14,13 @@ EXEC=
 
 if [ $# -gt 1 ]; then
     shift
+    echo "EXEC=$@"
     EXEC="$@"
 fi
 
 # install dependecies
 if [ ! -e /usr/bin/qemu-arm-static ]; then
+    . scripts/gplan-init-repos.sh
     apt-get update
     apt-get install -y qemu qemu-user-static binfmt-support
 fi

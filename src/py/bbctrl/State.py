@@ -230,6 +230,10 @@ class State(object):
 
     def set(self, name, value):
         name = self.resolve(name)
+        load_position = False
+
+        if name == 'cycle' and self.vars.get('cycle') == 'homing' and value == 'idle':
+            load_position = True
 
         if not name in self.vars or self.vars[name] != value:
             self.vars[name] = value
@@ -239,6 +243,16 @@ class State(object):
             if self.timeout is None:
                 self.timeout = self.ctrl.ioloop.call_later(0.25, self._notify)
 
+        # Loading origin from config after homing 
+        if load_position and self.vars.get('cycle') == 'idle':
+            axes = 'xyzbc' if self.vars.get('2an') == 3 else 'xyzabc'
+            for axis in axes:
+                offset = self.ctrl.config.get('offset_' + axis)
+                if offset is not None and self.get('offset_'+ axis) == 0:
+                    origin = offset if self.get('metric') == True else offset / 25.4
+                    self.log.info('axis: {} offset: {} origin: {}'.format(axis, offset, origin))
+                    self.ctrl.mach.set_position(axis, -origin)
+            
 
     def update(self, update):
         for name, value in update.items():

@@ -10,6 +10,7 @@
     import MoveToZeroDialog from "./MoveToZeroDialog.svelte";
     import ShutdownDialog from "./ShutdownDialog.svelte";
     import MessageDialog from "./MessageDialog.svelte";
+    import SwitchRotaryDialog from "./SwitchRotaryDialog.svelte";
 
     const HomeMachineDialogProps = writable<HomeMachineDialogPropsType>();
     type HomeMachineDialogPropsType = {
@@ -21,6 +22,7 @@
     type ProbeDialogPropsType = {
         open: boolean;
         probeType: "xyz" | "z";
+        isRotaryActive: boolean;
     };
 
     const ScreenRotationDialogProps = writable<ScreenRotationDialogPropsType>();
@@ -56,7 +58,7 @@
     const MoveToZeroDialogProps = writable<MoveToZeroDialogPropsType>();
     type MoveToZeroDialogPropsType = {
         open: boolean;
-        axes: "xy" | "z";
+        axes: "xy" | "z" | "a";
     };
 
     const ShutdownDialogProps = writable<ShutdownDialogPropsType>();
@@ -70,6 +72,13 @@
         title: string;
         message: string;
         noaction: boolean;
+    };
+
+    const SwitchRotaryDialogProps = writable<SwitchRotaryDialogPropsType>();
+    type SwitchRotaryDialogPropsType = {
+        open: boolean;
+        isActive: boolean;
+        switchMode: (mode: boolean) => void;
     };
 
     export function showDialog(
@@ -122,6 +131,11 @@
         props: Omit<MessageDialogPropsType, "open">
     );
 
+    export function showDialog(
+        dialog: "SwitchRotary",
+        props: Omit<SwitchRotaryDialogPropsType, "open">
+    );
+
     export function showDialog(dialog: string, props: any) {
         switch (dialog) {
             case "HomeMachine":
@@ -162,6 +176,10 @@
 
             case "Message":
                 MessageDialogProps.set({ ...props, open: true });
+                break;
+            
+            case "SwitchRotary":
+                SwitchRotaryDialogProps.set({ ...props, open: true });
                 break;
 
             default:
@@ -242,3 +260,4 @@
 <MoveToZeroDialog {...$MoveToZeroDialogProps} />
 <ShutdownDialog {...$ShutdownDialogProps} />
 <MessageDialog {...$MessageDialogProps} />
+<SwitchRotaryDialog {...$SwitchRotaryDialogProps} />

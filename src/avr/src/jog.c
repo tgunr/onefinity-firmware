@@ -146,7 +146,7 @@ stat_t command_jog(char *cmd) {
 
   // Start jogging
   if (state_get() != STATE_JOGGING) {
-    memset(&jr, 0, sizeof(jr));
+    jr_t jr = {0};  // Use value initialization instead of memset
 
     jr.holding = state_get() == STATE_HOLDING;
 

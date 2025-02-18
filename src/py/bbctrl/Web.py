@@ -481,7 +481,7 @@ class StepHandler(bbctrl.APIHandler):
 
 class PositionHandler(bbctrl.APIHandler):
     def put_ok(self, axis):
-        self.get_ctrl().mach.set_position(axis, float(self.json['position']))
+        self.get_ctrl().mach.set_position(axis, float(self.json['position']), True)
 
 
 class OverrideFeedHandler(bbctrl.APIHandler):
@@ -572,18 +572,96 @@ class TimeHandler(bbctrl.APIHandler):
 
     def get(self):
         timeinfo = call_get_output(['timedatectl'])
-        timezones = call_get_output(
-            ['timedatectl', 'list-timezones', '--no-pager'])
-        self.get_log('TimeHandler').info('Time stuff: {}, {}'.format(
-            timeinfo, timezones))
-
+        timezones = call_get_output(['timedatectl', 'list-timezones', '--no-pager'])
         self.write_json({'timeinfo': timeinfo, 'timezones': timezones})
 
     def put_ok(self):
-        datetime = self.json['datetime']
-        timezone = self.json['timezone']
-        subprocess.Popen(['timedatectl', 'set-time', datetime])
-        subprocess.Popen(['timedatectl', 'set-timezone', timezone])
+        datetime = self.json.get('datetime', None)
+        timezone = self.json.get('timezone', None)
+
+        try:
+            if datetime is not None:
+                subprocess.Popen(['sudo','timedatectl', 'set-ntp', 'false'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                result1 = subprocess.Popen(['sudo','date', '-s', datetime], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                subprocess.Popen(['sudo','timedatectl', 'set-ntp', 'true'], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                stdout, stderr = result1.communicate()
+
+                if(result1.returncode == 0):
+                    self.get_log('TimeHandler').info('Result1 {} : {}'.format(result1.returncode, stdout))
+                else:
+                    raise Exception(stderr)
+            
+            if timezone is not None:
+                result2 = subprocess.Popen(['sudo','timedatectl', 'set-timezone', timezone], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
+                stdout, stderr = result2.communicate()
+
+                if(result2.returncode == 0):
+                    self.get_log('TimeHandler').info('Result2 {}'.format(result2.returncode))
+                else:
+                    raise Exception(stderr)
+
+        except Exception as e:
+            self.get_log('TimeHandler').info('Error: {}'.format(e))
+
+class RotaryHandler(bbctrl.APIHandler):
+
+    def put_ok(self):
+        try:
+            status = self.json.get('status', None)
+            ctrl = self.get_ctrl()
+            config = ctrl.config
+            path = ctrl.get_path('config.json')
+
+            if status is None:
+                raise Exception("No status provided")
+            
+            try:
+                if os.path.exists(path):
+                    with open(path, 'r') as f: config_data = json.load(f)
+                else: config_data = {'version': self.version}
+
+            except Exception: self.log.exception('Internal error: Failed to load config template')
+
+
+            motors = config_data.get("motors")
+            
+            if not motors:
+                raise ValueError("Motors data not found in configuration")
+
+
+            motor_1 = motors[1]
+            motor_2 = motors[2]
+            
+            is_axis_A = motor_2.get("axis") == "A"
+
+            if is_axis_A == status: return
+
+            motor_2["axis"] = "Y" if is_axis_A else "A"
+            motor_1["max-velocity"] *= 2 if is_axis_A else 0.5
+
+            if is_axis_A:
+                if 'min-soft-limit-backup' in motor_2 and 'max-soft-limit-backup' in motor_2:
+                    motor_2['min-soft-limit'] = motor_2['min-soft-limit-backup']
+                    motor_2['max-soft-limit'] = motor_2['max-soft-limit-backup']
+                else:
+                    raise ValueError("Backup soft limits are missing for motor_2.")
+            else:
+                motor_2['min-soft-limit-backup'] = motor_2['min-soft-limit']
+                motor_2['max-soft-limit-backup'] = motor_2['max-soft-limit']
+
+                motor_2['min-soft-limit'] = -720
+                motor_2['max-soft-limit'] = 720
+
+            config.save(config_data)
+
+        except FileNotFoundError:
+            self.get_log('RotaryHandler').error('Configuration file not found at {}'.format(path))
+        except KeyError as e:
+            self.get_log('RotaryHandler').error('Missing key in configuration data: {}'.format(e))
+        except ValueError as e:
+            self.get_log('RotaryHandler').error('Validation error: {}'.format(e))
+        except Exception as e:
+            self.get_log('RotaryHandler').error('Unexpected error: {}'.format(e))
 
 
 class RemoteDiagnosticsHandler(bbctrl.APIHandler):
@@ -758,6 +836,7 @@ class Web(tornado.web.Application):
             (r'/api/video', bbctrl.VideoHandler),
             (r'/api/screen-rotation', ScreenRotationHandler),
             (r'/api/time', TimeHandler),
+            (r'/api/rotary', RotaryHandler),
             (r'/api/remote-diagnostics', RemoteDiagnosticsHandler),
             (r'/(.*)', StaticFileHandler,
              {'path': bbctrl.get_resource('http/'),

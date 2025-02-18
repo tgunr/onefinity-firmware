@@ -95,6 +95,35 @@ tt
 
   .whitespace
     flex-grow 1
+  
+  .rotary-button
+    border 1px solid transparent
+    background transparent
+    cursor pointer
+    width 100px
+    height 100px
+    border-radius 100px
+    margin 5px 0 5px 0
+    display flex
+    justify-content center
+    align-items center
+
+    &.active
+      border 1px solid #54ed54
+      background #ccffcb
+    
+    &:focus
+      outline none
+      box-shadow none
+    
+    &:disabled
+      opacity 0.5
+      background #e0e0e0
+      border 1px solid black
+      cursor not-allowed
+  
+  .rotary-text
+    text-align center
 
   .video
     position relative
@@ -1022,7 +1051,12 @@ tt.save
 
   a
     text-decoration none
-
+  
+  .tip
+    font-style italic
+    font-size 90%
+    line-height 1.5
+    white-space pre-line
 
 .modal-mask
   position fixed
@@ -1224,3 +1258,8 @@ tt.save
   .input-field
     margin-top 10px
 
+  select .heading-option
+    font-weight bold
+    background-color #f0f0f0
+    color #555
+  

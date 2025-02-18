@@ -62,12 +62,22 @@
                 enabled. If you choose to live dangerously, and disable the
                 safety prompts, Onefinity cannot be held responsible.
             </div>
+            
+            <h3>Probe Block</h3>
+            
+            {#each Object.keys(configTemplate.probe) as key}
+            {#if key !== "probe-diameter"}
+            <ConfigTemplatedInput key={`probe.${key}`} />
+            {/if}
+            {/each}
 
             <br />
 
-            {#each Object.keys(configTemplate.probe) as key}
+            <h3>Probe Rotary</h3>
+
+            {#each Object.keys(configTemplate["probe-rotary"]) as key}
                 {#if key !== "probe-diameter"}
-                    <ConfigTemplatedInput key={`probe.${key}`} />
+                    <ConfigTemplatedInput key={`probe-rotary.${key}`} />
                 {/if}
             {/each}
         </fieldset>

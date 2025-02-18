@@ -138,8 +138,13 @@ s8 type_parse_s8(const char *value, stat_t *status) {
 
 
 // u8
+static const char u8_fmt[] PROGMEM = "%u";
 bool type_eq_u8(u8 a, u8 b) {return a == b;}
-void type_print_u8(u8 x) {printf_P(PSTR("%" PRIu8), x);}
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wuninitialized"
+void type_print_u8(u8 x) {printf_P(PSTR("%u"), (unsigned int)x);}
+#pragma GCC diagnostic pop
 
 
 u8 type_parse_u8(const char *value, stat_t *status) {
