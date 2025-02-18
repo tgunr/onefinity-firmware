@@ -2,9 +2,9 @@
 o1 (SURFACE RECTANGE - ORIGIN IS CENTER OR BOTTOM LEFT)
 ; CONFIG SECTION
 ; USE CENTER ORIGIN? 1=YES 0=NO
-#<_center> = 1 
-; USE METRIC UNITS? 1=YES 0=NO
-#<_useMM> = 0  
+#<_center> = 0 
+; UNITS? 1=mm 0=inches
+#<_units> = 0  
 ; WIDTH ON X
 #<_x_width> = 10.0    (9.25 INCHES = ~235MM)
 ; LENGTH ON Y
@@ -12,37 +12,28 @@ o1 (SURFACE RECTANGE - ORIGIN IS CENTER OR BOTTOM LEFT)
 ; TOOL DIAMETER
 #<_tool_diameter> = 1  (1.375 INCHES = ~35MM)
 ; DEPTH TO GO DOWN IN ONE PASS USE NEGATIVE
-o301 IF [#<_useMM> EQ 1]
-    #<_pass_depth> = -0.05   (0.05MM PER PASS)
-    #<_final_depth> = -0.05  (0.05MM FINAL DEPTH)
-o301 ELSE
-    #<_pass_depth> = -0.001  (0.002 INCHES PER PASS)
-    #<_final_depth> = -0.01 (0.002 INCHES FINAL DEPTH)
-o301 ENDIF
+#<_pass_depth> = -0.001   
+#<_final_depth> = -0.001
 ; STEPOVER PERCENTAGE 75-80% RECOMMENDED
 #<_stepover_percent> = 50
 ; CALCULATE STEPOVER FROM TOOL DIAMETER AND PERCENTAGE
 #<_stepover> = [#<_tool_diameter> * #<_stepover_percent> / 100]
 ; FEEDRATE
-o302 IF [#<_useMM> EQ 1]
-    #<_feedrate> = 12700  (500 INCHES/MIN = 12700 MM/MIN)
-o302 ELSE
-    #<_feedrate> = 500    (INCHES PER MINUTE)
-o302 ENDIF
+#<_feedrate> = 500 (INCHES PER MINUTE)
 
-M0 (DEBUG, _useMM=#<_useMM> _center=#<_center> x_width=#<_x_width> y_length=#<_y_length> tool_diameter=#<_tool_diameter> pass_depth=#<_pass_depth> final_depth=#<_final_depth> stepover_percent=#<_stepover_percent> stepover=#<_stepover> feedrate=#<_feedrate>)
+M0 (DEBUG, _units=#<_units> _center=#<_center> x_width=#<_x_width> y_length=#<_y_length> tool_diameter=#<_tool_diameter> pass_depth=#<_pass_depth> final_depth=#<_final_depth> stepover_percent=#<_stepover_percent> stepover=#<_stepover> feedrate=#<_feedrate>)
 ; END OF CONFIG SECTION
 
 ; SAFETY CHECKS
 ; 400-499
 o400 IF [#<_final_depth> GT #<_pass_depth>]
-    (m0 (msg, FINAL DEPTH MUST NOT BE HIGHER THAN PASS DEPTH - ABORTING)
+    M0 (MSG, FINAL DEPTH MUST NOT BE HIGHER THAN PASS DEPTH - ABORTING)
     M2
 o400 ENDIF 
 
 ; CHECK STEPOVER AGAINST TOOL DIAMETER
 o401 IF [#<_stepover> GT [#<_tool_diameter> * 0.8]]
-    (M0 (MSG, STEPOVER EXCEEDS 80% OF TOOL DIAMETER - ABORTING)
+    M0 (MSG, STEPOVER EXCEEDS 80% OF TOOL DIAMETER - ABORTING)
     M2
 o401 ENDIF
 
@@ -62,7 +53,7 @@ o200 ENDIF
 
 ; SET ABSOLUTE POSITIONING AND XY PLANE
 G0 G90 G17
-o303 IF [#<_useMM> EQ 1]
+o303 IF [#<_units> EQ 1]
     G21          (SET UNITS TO MILLIMETERS)
 o303 ELSE
     G20          (SET UNITS TO INCHES)
@@ -72,17 +63,18 @@ o303 ENDIF
 ; 100-199
 o100 SUB
     ; SAFETY HEIGHT
-    o101 IF [#<_useMM> EQ 1]
+    o101 IF [#<_units> EQ 1]
         G0 Z6.25                            
     o101 ELSE
         G0 Z.125                            
     o101 ENDIF
     ; RAMP START POSITION
     o102 IF [#<_center> EQ 1]
-        (M0 (DEBUG, o102 _xpos=#<_xpos> _ypos=#<_ypos>)
+        M0 (DEBUG, USE CENTER ORIGIN o102 _xpos=#<_xpos> _ypos=#<_ypos>)
         X[#<_xpos>] Y[#<_ypos>] (START AT TOP RIGHT QUADRANT FOR CENTER ORIGIN)
     o102 ELSE
-        X0 Y0                   (RAMP POSITION FOR BOTTOM LEFT ORIGIN)
+        M0 (DEBUG, USE BOTTOM LEFT ORIGIN o102 _xpos=#<_xpos> _ypos=#<_ypos>)
+        X0 Y0 (RAMP POSITION FOR BOTTOM LEFT ORIGIN)
     o102 ENDIF
 
     ; RAMP STARTING HEIGHT
@@ -92,7 +84,7 @@ o100 SUB
     #<_dist> = [#<_depth> - #<_curr_depth>]
 
     M0 (DEBUG,  DIST=#<_dist> _curr_depth=#<_curr_depth> DEPTH=#<_depth>)
-    o103 IF [#<_useMM> EQ 1]
+    o103 IF [#<_units> EQ 1]
         #<_ramp_depth> = -2.2  (5 DEGREE RAMP OVER 25MM - NEGATIVE FOR DOWNWARD)
     o103 ELSE
         #<_ramp_depth> = -.087 (5 DEGREE RAMP OVER 1 INCH - NEGATIVE FOR DOWNWARD)
@@ -100,24 +92,24 @@ o100 SUB
     
     ; ENSURE RAMP DEPTH IS NOT ZERO TO AVOID DIVISION BY ZERO
     o104 IF [#<_ramp_depth> EQ 0]
-        (M0 (DEBUG, RAMP DEPTH IS ZERO)
+        M0 (DEBUG, RAMP DEPTH IS ZERO)
         #<_ramp_depth> = -0.001 (SET TO A SMALL NEGATIVE VALUE)
     o104 ENDIF
     
     #<_ramps> = [FIX[ABS[#<_dist>] / ABS[#<_ramp_depth>]]]
 
     o105 IF [#<_ramps> EQ 0]
-        (M0 (DEBUG,  RAMPS IS ZERO)
+        M0 (DEBUG,  RAMPS IS ZERO)
         #<_ramps> = 1 (ENSURE AT LEAST ONE RAMP)
     o105 ENDIF
     
     ; IF RAMP DEPTH IS LARGER THAN OUR TARGET DISTANCE, USE THE TARGET DISTANCE
     o106 IF [ABS[#<_ramp_depth>] GT ABS[#<_dist>]]
-        (M0 (DEBUG, RAMP DEPTH IS LARGER THAN TARGET DISTANCE)
+        M0 (DEBUG, RAMP DEPTH IS LARGER THAN TARGET DISTANCE)
         #<_ramp_depth> = #<_dist>
     o106 ENDIF
     
-    (M0 (DEBUG,  DIST=#<_dist> RAMP_DEPTH=#<_ramp_depth> RAMPS=#<_ramps>)
+    M0 (DEBUG,  RAMPING DIST=#<_dist> RAMP_DEPTH=#<_ramp_depth> RAMPS=#<_ramps>)
     o107 REPEAT [#<_ramps>]
         (M0 (DEBUG,  BEFORE ADJUSTMENT: _curr_depth=#<_curr_depth> DEPTH=#<_depth> RAMP_DEPTH=#<_ramp_depth>)
         #<_curr_depth> = [#<_curr_depth> + #<_ramp_depth>]  (MOVE DOWN BY RAMP DEPTH)
@@ -131,7 +123,7 @@ o100 SUB
             X1 Z#<_curr_depth> F#<_ramp_feed>               (RAMP)
             #<_xpos> = 1
         o108 ENDIF
-        (M0 (DEBUG,  AFTER MOVEMENT: _xpos=#<_xpos> _ypos=#<_ypos> _curr_depth=#<_curr_depth>)
+        M0 (DEBUG,  AFTER MOVEMENT: _xpos=#<_xpos> _ypos=#<_ypos> _curr_depth=#<_curr_depth>)
     o107 ENDREPEAT
 
     ; IF CURRENT DEPTH IS NOT YET TO PASS DEPTH
@@ -154,12 +146,13 @@ o100 SUB
 o100 endsub
 
 ; CALL SUB TO DO RAMPS
+M0 (DEBUG, CALLING RAMPS)
 o100 call
 
 ; MILLING LOGIC BASED ON CENTER ORIGIN OR BOTTOM-LEFT ORIGIN
 ; CHECK IF USING CENTER ORIGIN
-M0 (DEBUG, START MILLING LOGIC _curr_depth=#<_curr_depth> TO _depth=#<_depth>)
 o201 IF [#<_center> EQ 1]
+    M0 (DEBUG, START CENTER MILLING _curr_depth=#<_curr_depth> TO _depth=#<_depth>)
     ; SET DEPTH LOOP
     o202 WHILE [#<_curr_depth> GT #<_final_depth>]
         M0 (DEBUG, SPIRAL MILLING AT DEPTH=#<_curr_depth>)
@@ -179,7 +172,7 @@ o201 IF [#<_center> EQ 1]
        #<_curr_depth> = [#<_curr_depth> + #<_ramp_depth>] ; MOVE DOWN BY RAMP DEPTH
     o202 ENDWHILE
 o201 ELSE
-    ; BOTTOM-LEFT ORIGIN MILLING LOGIC
+    M0 (DEBUG, START BOTTOM-LEFT MILLING _curr_depth=#<_curr_depth> TO _depth=#<_depth>)
     o204 WHILE [#<_curr_depth> GT #<_final_depth>]
         ; LOOP FOR EACH DEPTH
         o205 WHILE [#<_curr_depth> GT #<_final_depth>]
@@ -198,7 +191,7 @@ o201 ENDIF
 ; SET CURRENT DEPTH AS NEW Z0 SO SCRIPT CAN BE REPEATED
 G92 Z0
 ; SAFETY HEIGHT
-o307 IF [#<_useMM> EQ 1]
+o307 IF [#<_units> EQ 1]
     G1 Z6.25   
 o307 ELSE
     G1 Z.125   
