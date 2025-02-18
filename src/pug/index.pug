@@ -6,6 +6,7 @@ html(lang="en")
 
     title Onefinity CNC - Web interface
 
+
     style: include ../static/css/pure-min.css
     style: include ../static/css/side-menu.css
 
@@ -87,8 +88,13 @@ html(lang="en")
             .fa.fa-thermometer-full(class="error",
               v-if="80 <= state.rpi_temp",
               title="Raspberry Pi temperature too high.")
-
+          
           .whitespace
+
+          div
+            button.rotary-button(:disabled="!enable_rotary", :class="is_rotary_active && 'active'", @click="showSwitchRotaryModeDialog")
+              img(src="/images/rotary.svg", alt="rotary", :style="is_rotary_active ? 'width:90%;' : 'width:85%;'")
+            div.rotary-text Rotary
 
           .video(title="Plug camera into USB.\n" +
             "Left click to toggle video size.\n" +
@@ -123,7 +129,7 @@ html(lang="en")
         label seconds.
 
       div(slot="footer")
-        button.pure-button.pure-button-primary(@click="errorShow = false") Ok
+        button.pure-button.pure-button-primary(@click="errorShow = false") OK
 
     message(:show.sync="confirmUpgrade")
       h3(slot="header") Upgrade Firmware?
@@ -176,6 +182,7 @@ html(lang="en")
 
     #templates: include ../../build/templates.pug
     iframe#download-target(style="display:none")
+
 
     script: include ../static/js/vue.js
     script: include ../static/js/sockjs.min.js

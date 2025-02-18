@@ -142,6 +142,22 @@
           "default": 0,
           "code": "tm"
         },
+        "min-soft-limit-backup": {
+          "type": "float",
+          "unit": "mm",
+          "iunit": "in",
+          "scale": 25.4,
+          "default": 0,
+          "code": "tnb"
+        },
+        "max-soft-limit-backup": {
+          "type": "float",
+          "unit": "mm",
+          "iunit": "in",
+          "scale": 25.4,
+          "default": 0,
+          "code": "tmb"
+        },
         "min-switch": {
           "type": "enum",
           "values": ["disabled", "normally-open", "normally-closed"],
@@ -261,7 +277,8 @@
         "Sunfar E300 (Beta)",
         "OMRON MX2",
         "V70",
-        "PwnCNC VFD"
+        "EM60",
+        "Redline VFD"
       ],
       "default": "Disabled",
       "code": "st"
@@ -518,6 +535,51 @@
     }
   },
 
+  "probe-rotary": {
+    "probe-diameter": {
+      "type": "float",
+      "min": 0,
+      "max": 25.4,
+      "unit": "mm",
+      "default": 6.35
+    },
+    "probe-xdim": {
+      "type": "float",
+      "unit": "mm",
+      "min": -1000,
+      "max": 1000,
+      "default": -125
+    },
+    "probe-ydim": {
+      "type": "float",
+      "unit": "mm",
+      "min": 0,
+      "max": 1000,
+      "default": 55
+    },
+    "probe-zdim": {
+      "type": "float",
+      "unit": "mm",
+      "min": 0,
+      "max": 1000,
+      "default": 35
+    },
+    "probe-fast-seek": {
+      "type": "float",
+      "unit": "mm/m",
+      "min": 0,
+      "max": 1000,
+      "default": 200
+    },
+    "probe-slow-seek": {
+      "type": "float",
+      "unit": "mm/m",
+      "min": 0,
+      "max": 1000,
+      "default": 25
+    }
+  },
+
   "gcode": {
     "program-start": {
       "type": "text",
@@ -653,8 +715,39 @@
     }
   },
 
+  "axes": {
+    "offset_x": {
+      "type": "float",
+      "default": 0
+    },
+    "offset_y": {
+      "type": "float",
+      "default": 0
+    },
+    "offset_z": {
+      "type": "float",
+      "default": 0
+    },
+    "offset_a": {
+      "type": "float",
+      "default": 0
+    },
+    "offset_b": {
+      "type": "float",
+      "default": 0
+    },
+    "offset_c": {
+      "type": "float",
+      "default": 0
+    }
+  },
+
   "admin": {
     "auto-check-upgrade": {
+      "type": "bool",
+      "default": true
+    },
+    "time_format": {
       "type": "bool",
       "default": true
     }

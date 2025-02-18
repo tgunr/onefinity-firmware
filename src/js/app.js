@@ -236,6 +236,16 @@ module.exports = new Vue({
 
             return msgs;
         },
+
+        is_rotary_active: function() {
+            if(this.state["2an"] == 3) return true;
+            return false;
+        },
+
+        enable_rotary: function() {
+            if(this.state["2an"] == 1 || this.state["2an"] == 3) return true;
+            return false;
+        }
     },
 
     ready: function() {
@@ -311,6 +321,22 @@ module.exports = new Vue({
             return semverLt(this.config.full_version, this.latestVersion);
         },
 
+        showSwitchRotaryModeDialog: function(){
+            SvelteComponents.showDialog("SwitchRotary", {
+                isActive: !this.is_rotary_active,
+                switchMode: (isActive) => this.toggle_rotary(isActive)
+            });
+        },
+ 
+        toggle_rotary: async function(isActive) {
+            try {
+                await api.put("rotary", {status: isActive});
+              } catch (error) {
+                console.error(error);
+                alert("Error occured");
+              }
+        },
+ 
         showShutdownDialog: function() {
             SvelteComponents.showDialog("Shutdown");
         },

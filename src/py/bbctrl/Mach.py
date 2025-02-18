@@ -276,7 +276,9 @@ class Mach(Comm):
     def home(self, axis, position = None):
         state = self.ctrl.state
 
-        if axis is None: axes = 'zxyabc' # TODO This should be configurable
+        if axis is None:
+            is_rotary_active = state.get('2an', None) == 3 
+            axes = 'zxybc' if is_rotary_active else 'zxyabc' # TODO This should be configurable
         else: axes = '%c' % axis
 
         for axis in axes:
@@ -355,13 +357,18 @@ class Mach(Comm):
         self.ctrl.state.set('optional_pause', enable)
 
 
-    def set_position(self, axis, position):
+    def set_position(self, axis, position, set_config = None):
         axis = axis.lower()
         state = self.ctrl.state
 
         if state.is_axis_homed(axis):
             # If homed, change the offset rather than the absolute position
             self.mdi('G92%s%f' % (axis, position))
+
+            #storing the offset to config
+            if set_config is not None:
+                self.ctrl.config.set('axes', {'offset_' + axis : state.get(axis + 'p')})
+                self.log.info('set_position: {} = {} '.format(axis, state.get(axis + 'p')))
 
         elif state.is_axis_enabled(axis):
             if self._get_cycle() != 'idle' and not self._is_paused():

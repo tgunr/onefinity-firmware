@@ -1,5 +1,5 @@
 {
-  "version": "1.4.2",
+  "version": "1.6.1",
   "settings": {
     "junction-accel": 200000,
     "max-deviation": 0.05,
@@ -256,6 +256,14 @@
     "probe-fast-seek": 75,
     "probe-zdim": 15.4,
     "probe-xdim": 53.975
+  },
+  "probe-rotary": {
+    "probe-diameter": 6.35,
+    "probe-ydim": 55,
+    "probe-slow-seek": 25,
+    "probe-fast-seek": 75,
+    "probe-zdim": 35,
+    "probe-xdim": -125
   },
   "outputs": {
     "load-1": "disabled",

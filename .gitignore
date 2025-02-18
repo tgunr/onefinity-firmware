@@ -29,4 +29,3 @@ __pycache__
 .idea/deployment.xml
 gplan-dev.img.tmp
 .snapshots/
-tools/
