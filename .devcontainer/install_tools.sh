@@ -58,10 +58,31 @@ fi
 
 # Install Node.js
 curl -fsSL https://deb.nodesource.com/setup_14.x | bash -
-sudo apt-get install -y nodejs --no-install-recommends
+sudo apt-get install -y nodejs npm --no-install-recommends || {
+    echo "Failed to install Node.js and npm"
+    exit 1
+}
 
-# Install GCC 10 packages
-sudo apt install gcc g++
+# Verify Node.js installation
+node --version || {
+    echo "Node.js installation failed"
+    exit 1
+}
+
+npm --version || {
+    echo "npm installation failed"
+    exit 1
+}
+
+# Install GCC packages
+sudo apt-get install -y gcc g++ || {
+    echo "Failed to install GCC"
+    exit 1
+}
+
+# Clean npm cache and verify
+npm cache clean --force
+npm config set legacy-peer-deps true
 
 # Then run the update-alternatives commands
 #sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 50

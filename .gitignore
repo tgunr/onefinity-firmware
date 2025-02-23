@@ -30,3 +30,5 @@ __pycache__
 gplan-dev.img.tmp
 .snapshots/
 tools/
+src/avr/._build
+src/svelte-components/
