@@ -1,0 +1,100 @@
+o1 (Index and mounting holes for AirWeights 16X16)
+#<_bit_dia>=0.125
+#<_feedrate>=20
+#<_plungrate>=[#<_feedrate>/2]
+#<_step>=0.05
+#<z_step>=[#<_step>*#<_bit_dia>]
+
+#<_insert_dia>=0.41
+#<_insert_radius>=[#<_insert_dia>/2-#<_bit_dia>/2]
+#<_insert_length>=0.3937
+#<_insert_space>=0.250
+#<_insert_depth>=[#<_insert_length>+#<_insert_space>]
+#<_revolutions>=1
+
+#<_index_dia>=0.25
+#<_index_radius>=[#<_index_dia>/2]
+#<_index_length>=1.0
+#<_index_depth>=0.4
+
+G90 G54 G0 X0 Y0 (Rapid move to X0 Y0 in absolute coordinates)
+G43 H1 Z1.0 (Tool length compensation, rapid to 1 inch above workpiece)
+M03 S10000 (Start spindle at 10000 RPM)
+M08 (Coolant on)
+
+G90 G20 (Use imperial, absolute)
+
+o100 SUB (Helical boring for insert)
+G90 G00 Z0.1 (Rapid to safe height above workpiece)
+G91 (Switch to relative for XY movements)
+G17 (XY plane selection)
+G0 X[#<_insert_radius>] Y0 (Move to start of helical boring)
+G90 G0 Z0 (Move to workpiece surface)
+G91 (Back to relative for helical move)
+G3 X[#<_insert_radius>] Y0 I[-#<_insert_radius>] J0 Z[-#<_insert_depth>] P#<_revolutions> F#<_plungrate>
+G3 X[#<_insert_radius>] Y0 I[-#<_insert_radius>] J0 F#<_plungrate>
+G90 G01 Z0.1 F100 (Retract to safe Z height)
+G00 Z1.0 (Rapid retract to 1 inch above workpiece)
+G91 (Return to relative positioning)
+o100 ENDSUB
+
+o101 SUB (Helical boring for index)
+G90 G00 Z0.1 (Rapid to safe height above workpiece)
+G91 (Switch to relative for XY movements)
+G17 (XY plane selection)
+G0 X[#<_index_radius>] Y0 (Move to start of helical boring)
+G90 G0 Z0 (Move to workpiece surface)
+G91 (Back to relative for helical move)
+G3 X[#<_index_radius>] Y0 I[-#<_index_radius>] J0 Z[-#<_index_depth>] P#<_revolutions> F#<_plungrate>
+G3 X[#<_index_radius>] Y0 I[-#<_index_radius>] J0 F#<_plungrate>
+G90 G01 Z0.1 F100 (Retract to safe Z height)
+G00 Z1.0 (Rapid retract to 1 inch above workpiece)
+G91 (Return to relative positioning)
+o101 ENDSUB
+
+(Bottom row)
+G90 G1 X0.5 Y0.5 F#<_feedrate> (Start position)
+o100 CALL (mounting hole)
+G0 X0.5 Y0 (Move right 0.5)
+o101 CALL (index hole)
+G0 X4.0 Y0 (Move right 4.0)
+o100 CALL (mounting hole)
+G0 X6.0 Y0 (Move right 6.0)
+o100 CALL (mounting hole)
+G0 X4.0 Y0 (Move right 4.0)
+o101 CALL (index hole)
+G0 X0.5 Y0 (Move right 0.5)
+o100 CALL (mounting hole)
+
+(Right side)
+G0 X0 Y-4.5 (Move down 4.0)
+o100 CALL (mounting hole)
+G0 X0 Y-6.0 (Move down 6.0)
+o100 CALL (mounting hole)
+G0 X0 Y-4.5 (Move down 4.5)
+o100 CALL (mounting hole)
+
+(Top row)
+G0 X-0.5 Y0 (Move left 0.5)
+o101 CALL (index hole)
+G0 X-4.0 Y0 (Move left 4.0)
+o100 CALL (mounting hole)
+G0 X-6.0 Y0 (Move left 6.0)
+o100 CALL (mounting hole)
+G0 X-4.0 Y0 (Move left 4.0)
+o101 CALL (index hole)
+G0 X-0.5 Y0 (Move left 0.5)
+o100 CALL (mounting hole)
+
+(Left side)
+G0 X0 Y4.5 (Move up 4.5)
+o100 CALL (mounting hole)
+G0 X0 Y6.0 (Move up 6.0)
+o100 CALL (mounting hole)
+G0 X0 Y4.5 (Move up 4.5)
+o100 CALL (mounting hole)
+
+M09 (Coolant off)
+M05 (Spindle off)
+G91 G28 Z0 (Return to machine home in Z)
+M30 (End program)

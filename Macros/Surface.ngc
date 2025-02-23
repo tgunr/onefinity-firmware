@@ -1,53 +1,292 @@
-% R40
+%
 o1 (SURFACE RECTANGE - ORIGIN IS CENTER OR BOTTOM LEFT)
 ; CONFIG SECTION
 ; USE CENTER ORIGIN? 1=YES 0=NO
 #<_center> = 1 
-; USE METRIC UNITS? 1=YES 0=NO
-#<_useMM> = 0  
+; USE METRIC=1 INCHES=0  
+(YOU ARE RESPONSIBLE TO INSURE ALL VALUES ARE IN CORRECT UNITS)
+#<_units> = 0  
 ; WIDTH ON X
-#<_x_width> = 10.0    (9.25 INCHES = ~235MM)
+#<_x_width> = 4.0    (9.25 INCHES = ~235MM)
 ; LENGTH ON Y
-#<_y_length> = 10.0   (7.75 INCHES = ~197MM)
+#<_y_length> = 4.0   (7.75 INCHES = ~197MM)
 ; TOOL DIAMETER
 #<_tool_diameter> = 1  (1.375 INCHES = ~35MM)
 ; DEPTH TO GO DOWN IN ONE PASS USE NEGATIVE
-o301 IF [#<_useMM> EQ 1]
-    #<_pass_depth> = -0.05   (0.05MM PER PASS)
-    #<_final_depth> = -0.05  (0.05MM FINAL DEPTH)
-o301 ELSE
-    #<_pass_depth> = -0.001  (0.002 INCHES PER PASS)
-    #<_final_depth> = -0.01 (0.002 INCHES FINAL DEPTH)
-o301 ENDIF
+#<_pass_depth> = -0.001  (0.002 INCHES PER PASS)
+#<_final_depth> = -0.003 (0.002 INCHES FINAL DEPTH)
 ; STEPOVER PERCENTAGE 75-80% RECOMMENDED
 #<_stepover_percent> = 50
 ; CALCULATE STEPOVER FROM TOOL DIAMETER AND PERCENTAGE
 #<_stepover> = [#<_tool_diameter> * #<_stepover_percent> / 100]
 ; FEEDRATE
-o302 IF [#<_useMM> EQ 1]
-    #<_feedrate> = 12700  (500 INCHES/MIN = 12700 MM/MIN)
-o302 ELSE
-    #<_feedrate> = 500    (INCHES PER MINUTE)
-o302 ENDIF
-
-M0 (DEBUG, _useMM=#<_useMM> _center=#<_center> x_width=#<_x_width> y_length=#<_y_length> tool_diameter=#<_tool_diameter> pass_depth=#<_pass_depth> final_depth=#<_final_depth> stepover_percent=#<_stepover_percent> stepover=#<_stepover> feedrate=#<_feedrate>)
+#<_feedrate> = 50    (INCHES PER MINUTE)
+; RAMP ANGLE
+#<_ramp_angle> = 5 (5 DEGREE RAMP ANGLE)
+; RAMP LENGTH (Distance over which to ramp in the X-Axis)
+#<_ramp_length> = 1 (1 INCH RAMP LENGTH OR 25MM IF USING MM)
+; SAFE_HEIGHT
+#<_safe_height> = 1
+; SHOW PROGRESS MESSAGES 1=YES 0=NO
+#<_progress> = 0  
 ; END OF CONFIG SECTION
 
+; DISPLAY ALL THE PARAMETERS
+M0 (DEBUG, "Center Origin: [#<_center>] Units: [#<_units>] X Width: [#<_x_width>] Y Length: [#<_y_length>] Tool Diameter: [#<_tool_diameter>] Pass Depth: [#<_pass_depth>] Final Depth: [#<_final_depth>] Steppover Percent: [#<_stepover_percent>] Steppover: [#<_stepover>] Feedrate: [#<_feedrate>] Ramp Angle: [#<_ramp_angle>] Ramp Length: [#<_ramp_length>]")
+
+; SUBROUTINES
+o120 SUB (move_to_safe_z)
+    G0 Z#<_safe_height>                            
+    o121 IF [#<_progress> EQ 1]
+        (DEBUG, At safety height)
+    o121 ENDIF
+o120 endsub
+
+o100 SUB (ramp_to_depth)
+    o122 IF [#<_progress> EQ 1]
+        (DEBUG, === START RAMP SUBROUTINE ===)
+    o122 ENDIF
+
+    ; Move to safety height
+    o120 call
+    
+    ; Move down to current depth (where we are in the stock)
+    G1 Z#<_curr_depth> F#<_ramp_feed>
+    o123 IF [#<_progress> EQ 1]
+        (DEBUG, At stock top depth=#<_curr_depth>)
+    o123 ENDIF
+
+    ; Ramp down to the target depth moving in positive X
+    G1 X[#<_xpos> + #<_ramp_length>] Z#<_depth> F#<_ramp_feed>
+    o124 IF [#<_progress> EQ 1]
+        (DEBUG, Ramped to X=[#<_xpos> + #<_ramp_length>] depth=#<_depth>)
+    o124 ENDIF
+
+    ; Return to start X position
+    G1 X#<_xpos> F#<_feedrate>
+    o125 IF [#<_progress> EQ 1]
+        (DEBUG, Returned to start position)
+    o125 ENDIF
+
+    ; Update current depth to reflect where we are now
+    #<_curr_depth> = #<_depth>
+    o126 IF [#<_progress> EQ 1]
+        (DEBUG, Updated current depth to #<_curr_depth>)
+    o126 ENDIF
+o100 endsub
+
+o110 SUB (sweep_pass)
+    o127 IF [#<_progress> EQ 1]
+        (DEBUG, === START SWEEP SUBROUTINE ===)
+    o127 ENDIF
+    #<_ypos> = 0  ; Reset Y position for each depth
+    o128 IF [#<_progress> EQ 1]
+        (DEBUG, Y Position Reset #<_ypos>)
+    o128 ENDIF
+    #<_direction> = 1; SET INITIAL DIRECTION TO RIGHT
+    o129 IF [#<_progress> EQ 1]
+        (DEBUG, Set Direction #<_direction>)
+    o129 ENDIF
+
+    o111 WHILE [#<_ypos> LT #<_y_length>]  ; Loop until Y length is reached       
+    o130 IF [#<_progress> EQ 1]
+        (DEBUG,  Inside Y Loop Y Pos is #<_ypos>)
+    o130 ENDIF
+        ; SWEEP ACROSS X MOVING Y UP ON EACH PASS
+        o112 IF [#<_direction> EQ 1]
+            G1 X[#<_x_width>] F#<_feedrate> (MOVE ACROSS X RIGHT)
+            o131 IF [#<_progress> EQ 1]
+                (DEBUG, Sweep Right X is now #<_x_width>)
+            o131 ENDIF
+            #<_direction> = 0; SET DIRECTION TO LEFT
+            o132 IF [#<_progress> EQ 1]
+                (DEBUG, Set direction to Left #<_direction>)
+            o132 ENDIF
+        o112 ELSE
+            G1 X0 F#<_feedrate> (MOVE BACK TO X0 LEFT)
+            o133 IF [#<_progress> EQ 1]
+                (DEBUG, Sweep Left X is now 0)
+            o133 ENDIF
+            #<_direction> = 1; SET DIRECTION TO RIGHT
+            o134 IF [#<_progress> EQ 1]
+                (DEBUG, Set direction to Right #<_direction>)
+            o134 ENDIF
+        o112 ENDIF
+        
+        #<_ypos> = [#<_ypos> + #<_stepover>] ; Update Y position after increment
+        o135 IF [#<_progress> EQ 1]
+            (DEBUG, Y Position Increased by Stepover to #<_ypos>)
+        o135 ENDIF
+        G1 Y[#<_ypos>] F#<_feedrate>
+        o136 IF [#<_progress> EQ 1]
+            (DEBUG, Move to Y Pos #<_ypos>)
+        o136 ENDIF
+    o111 ENDWHILE
+    ; SWEEP TO THE END OF Y AXIS IF WE DIDNT GO THAT FAR
+    o137 IF [#<_progress> EQ 1]
+        (DEBUG, Exit Y Loop )
+    o137 ENDIF
+    o113 IF [#<_direction> EQ 0]
+        G1 X0 F#<_feedrate>
+        o138 IF [#<_progress> EQ 1]
+            (DEBUG, End Y Loop, Sweep Left)
+        o138 ENDIF
+    o113 ELSE
+        G1 X[#<_x_width>] F#<_feedrate>
+        o139 IF [#<_progress> EQ 1]
+            (DEBUG, End Y Loop, Sweep Right )
+        o139 ENDIF
+    o113 ENDIF
+    o140 IF [#<_progress> EQ 1]
+        (DEBUG, === END SWEEP SUBROUTINE ===)
+    o140 ENDIF
+o110 endsub
+
+o160 SUB (surface_center)
+    o141 IF [#<_progress> EQ 1]
+        (DEBUG, Using CENTER origin spiral pattern)
+    o141 ENDIF
+            
+    o204 WHILE [#<_curr_depth> GT #<_final_depth>]  ; Loop until final depth is reached
+        ; Calculate next depth
+        #<_depth> = [#<_curr_depth> + #<_pass_depth>]  ; Next depth to cut to
+        
+        ; Don't go deeper than final depth
+        o208 IF [#<_depth> LT #<_final_depth>]
+            #<_depth> = #<_final_depth>
+        o208 ENDIF
+        
+        o142 IF [#<_progress> EQ 1]
+            (DEBUG, Moving to depth #<_depth>)
+        o142 ENDIF
+        
+        ; Start at bottom-left corner
+        #<_xpos> = [-#<_x_width> / 2]
+        #<_ypos> = [-#<_y_length> / 2]
+        
+        ; Move to start position at safe height
+        o120 call
+        G0 X#<_xpos> Y#<_ypos>
+        o143 IF [#<_progress> EQ 1]
+            (DEBUG, Moved to #<_xpos>, #<_ypos>)
+        o143 ENDIF
+
+        ; Ramp down at start position
+        o100 call ; Ramp to the next depth
+        o144 IF [#<_progress> EQ 1]
+            (DEBUG, Ramped down at #<_xpos>, #<_ypos>)
+        o144 ENDIF
+        
+        ; Initialize perimeter size
+        #<_current_width> = #<_x_width>
+        #<_current_length> = #<_y_length>
+        
+        ; Spiral in until we reach center
+        o211 WHILE [[#<_current_width> GT #<_stepover>] AND [#<_current_length> GT #<_stepover>]]
+            ; Move right along bottom
+            #<_xpos> = [#<_xpos> + #<_current_width>]
+            G1 X#<_xpos> F#<_feedrate>
+            o145 IF [#<_progress> EQ 1]
+                (DEBUG, Move right along bottom to #<_xpos>)
+            o145 ENDIF
+            
+            ; Move up along right side
+            #<_ypos> = [#<_ypos> + #<_current_length>]
+            G1 Y#<_ypos> F#<_feedrate>
+            o146 IF [#<_progress> EQ 1]
+                (DEBUG, Move up along right side to #<_ypos>)
+            o146 ENDIF
+
+            ; Move left along top
+            #<_xpos> = [#<_xpos> - #<_current_width>]
+            G1 X#<_xpos> F#<_feedrate>
+            o147 IF [#<_progress> EQ 1]
+                (DEBUG, Move left along top to #<_xpos>)
+            o147 ENDIF
+
+            ; Move down along left side
+            #<_ypos> = [#<_ypos> - #<_current_length>]
+            G1 Y#<_ypos> F#<_feedrate>
+            o148 IF [#<_progress> EQ 1]
+                (DEBUG, Move down left to #<_ypos>)
+            o148 ENDIF
+            
+            ; Step inward by stepover
+            #<_xpos> = [#<_xpos> + #<_stepover>]
+            #<_ypos> = [#<_ypos> + #<_stepover>]
+            G1 X#<_xpos> Y#<_ypos> F#<_feedrate>
+            o149 IF [#<_progress> EQ 1]
+                (DEBUG, Moved inward to #<_xpos>, #<_ypos>)
+            o149 ENDIF
+
+            ; Reduce perimeter size by two stepovers (one for each side)
+            #<_current_width> = [#<_current_width> - [2 * #<_stepover>]]
+            #<_current_length> = [#<_current_length> - [2 * #<_stepover>]]
+            o150 IF [#<_progress> EQ 1]
+                (DEBUG, perimeter size _current_width = #<_current_width> _current_length = #<_current_length>)
+            o150 ENDIF
+        o211 ENDWHILE
+        
+        ; Move to safe height for next pass
+        o120 call 
+        #<_progress> = 0 ; only show the first time       
+    o204 ENDWHILE
+    o151 IF [#<_progress> EQ 1]
+        (DEBUG, Finished spiral pattern, Current Depth is #<_curr_depth> Final Depth is #<_final_depth>)
+    o151 ENDIF
+o160 endsub (surface_center)
+
+o170 SUB (surface_BL)
+    o152 IF [#<_progress> EQ 1]
+        (DEBUG, Using BOTTOM-LEFT origin milling pattern #<_xpos>: [#<_xpos>], #<_ypos>: [#<_ypos>])
+    o152 ENDIF
+    ; BOTTOM-LEFT ORIGIN MILLING LOGIC
+    o153 IF [#<_progress> EQ 1]
+        (DEBUG, START MAIN MILLING LOOP, Current Depth is #<_curr_depth> Final Depth is #<_final_depth>)
+    o153 ENDIF
+    
+    o204 WHILE [#<_curr_depth> GT #<_final_depth>]  ; Loop until final depth is reached
+        ; Calculate next depth
+        #<_depth> = [#<_curr_depth> + #<_pass_depth>]  ; Next depth to cut to
+        
+        ; Don't go deeper than final depth
+        o208 IF [#<_depth> LT #<_final_depth>]
+            #<_depth> = #<_final_depth>
+        o208 ENDIF
+        
+        o154 IF [#<_progress> EQ 1]
+            (DEBUG, Moving to depth #<_depth>)
+        o154 ENDIF
+        o100 call ; Ramp to the next depth
+        o110 call ; Do the sweep pass
+        #<_progress> = 0 ; only show the first time
+    o204 ENDWHILE
+    o155 IF [#<_progress> EQ 1]
+        (DEBUG, Finished Main WHILE LOOP, Current Depth is #<_curr_depth> Final Depth is #<_final_depth>)
+    o155 ENDIF
+o170 endsub (surface_BL)
+
+; MACHINE SETUP
+G54
+G0 G90 G17
+o303 IF [#<_units> EQ 1]
+    G21          (SET UNITS TO MILLIMETERS)
+o303 ELSE
+    G20          (SET UNITS TO INCHES)
+o303 ENDIF
+
 ; SAFETY CHECKS
-; 400-499
 o400 IF [#<_final_depth> GT #<_pass_depth>]
-    (m0 (msg, FINAL DEPTH MUST NOT BE HIGHER THAN PASS DEPTH - ABORTING)
+    M0 (DEBUG, ERROR: FINAL DEPTH MUST NOT BE HIGHER THAN PASS DEPTH - ABORTING)
     M2
 o400 ENDIF 
 
-; CHECK STEPOVER AGAINST TOOL DIAMETER
 o401 IF [#<_stepover> GT [#<_tool_diameter> * 0.8]]
-    (M0 (MSG, STEPOVER EXCEEDS 80% OF TOOL DIAMETER - ABORTING)
+    M0 (DEBUG, ERROR: Stepover [#<_stepover>] exceeds 80% of tool diameter [#<_tool_diameter>])
     M2
 o401 ENDIF
 
-; POSITION AND MOVEMENT CONTROL
-; 200-299
+; POSITION CONTROL
 o200 IF [#<_center> GT 0]
     #<_xpos> = [#<_x_width> / 2]   (ORIGIN IS CENTER SO SET X TO HALF WIDTH)
     #<_ypos> = [#<_y_length> / 2]  (ORIGIN IS CENTER SO SET Y TO HALF LENGTH)
@@ -56,154 +295,27 @@ o200 ELSE
     #<_ypos> = 0
 o200 ENDIF
 
-#<_curr_depth> = 0 (START AT Z0)
-#<_depth> = #<_pass_depth> (START AT FIRST PASS DEPTH)
+; INITIALIZE VARIABLES
+#<_curr_depth> = 0            (START AT Z0 - TOP OF STOCK)
 #<_ramp_feed> = [#<_feedrate> / 2]  (REDUCE FEEDRATE BY 50% FOR RAMP)
+#<_depth> = 0                ; Initialize the depth here
 
-; SET ABSOLUTE POSITIONING AND XY PLANE
-G0 G90 G17
-o303 IF [#<_useMM> EQ 1]
-    G21          (SET UNITS TO MILLIMETERS)
-o303 ELSE
-    G20          (SET UNITS TO INCHES)
-o303 ENDIF
-
-; MAIN PROGRAM FLOW CONTROL
-; 100-199
-o100 SUB
-    ; SAFETY HEIGHT
-    o101 IF [#<_useMM> EQ 1]
-        G0 Z6.25                            
-    o101 ELSE
-        G0 Z.125                            
-    o101 ENDIF
-    ; RAMP START POSITION
-    o102 IF [#<_center> EQ 1]
-        (M0 (DEBUG, o102 _xpos=#<_xpos> _ypos=#<_ypos>)
-        X[#<_xpos>] Y[#<_ypos>] (START AT TOP RIGHT QUADRANT FOR CENTER ORIGIN)
-    o102 ELSE
-        X0 Y0                   (RAMP POSITION FOR BOTTOM LEFT ORIGIN)
-    o102 ENDIF
-
-    ; RAMP STARTING HEIGHT
-    G1 Z#<_curr_depth> F#<_ramp_feed>   
-
-    ; DISTANCE DOWN WE NEED TO GO
-    #<_dist> = [#<_depth> - #<_curr_depth>]
-
-    M0 (DEBUG,  DIST=#<_dist> _curr_depth=#<_curr_depth> DEPTH=#<_depth>)
-    o103 IF [#<_useMM> EQ 1]
-        #<_ramp_depth> = -2.2  (5 DEGREE RAMP OVER 25MM - NEGATIVE FOR DOWNWARD)
-    o103 ELSE
-        #<_ramp_depth> = -.087 (5 DEGREE RAMP OVER 1 INCH - NEGATIVE FOR DOWNWARD)
-    o103 ENDIF
-    
-    ; ENSURE RAMP DEPTH IS NOT ZERO TO AVOID DIVISION BY ZERO
-    o104 IF [#<_ramp_depth> EQ 0]
-        (M0 (DEBUG, RAMP DEPTH IS ZERO)
-        #<_ramp_depth> = -0.001 (SET TO A SMALL NEGATIVE VALUE)
-    o104 ENDIF
-    
-    #<_ramps> = [FIX[ABS[#<_dist>] / ABS[#<_ramp_depth>]]]
-
-    o105 IF [#<_ramps> EQ 0]
-        (M0 (DEBUG,  RAMPS IS ZERO)
-        #<_ramps> = 1 (ENSURE AT LEAST ONE RAMP)
-    o105 ENDIF
-    
-    ; IF RAMP DEPTH IS LARGER THAN OUR TARGET DISTANCE, USE THE TARGET DISTANCE
-    o106 IF [ABS[#<_ramp_depth>] GT ABS[#<_dist>]]
-        (M0 (DEBUG, RAMP DEPTH IS LARGER THAN TARGET DISTANCE)
-        #<_ramp_depth> = #<_dist>
-    o106 ENDIF
-    
-    (M0 (DEBUG,  DIST=#<_dist> RAMP_DEPTH=#<_ramp_depth> RAMPS=#<_ramps>)
-    o107 REPEAT [#<_ramps>]
-        (M0 (DEBUG,  BEFORE ADJUSTMENT: _curr_depth=#<_curr_depth> DEPTH=#<_depth> RAMP_DEPTH=#<_ramp_depth>)
-        #<_curr_depth> = [#<_curr_depth> + #<_ramp_depth>]  (MOVE DOWN BY RAMP DEPTH)
-        (M0 (DEBUG,  AFTER ADJUSTMENT: _curr_depth=#<_curr_depth> DEPTH=#<_depth> RAMP_DEPTH=#<_ramp_depth>)
-        o108 IF [#<_center> EQ 1]
-            G1 X[#<_xpos>] Y[#<_ypos>] F#<_feedrate>        (RAMP START POSITION)    
-            X[#<_xpos> + 1] Z#<_curr_depth> F#<_ramp_feed>  (RAMP) 
-            #<_xpos> = [#<_xpos> + 1]
-        o108 ELSE
-            G1 X0 Y0 F#<_feedrate>                          (RAMP START POSITION)    
-            X1 Z#<_curr_depth> F#<_ramp_feed>               (RAMP)
-            #<_xpos> = 1
-        o108 ENDIF
-        (M0 (DEBUG,  AFTER MOVEMENT: _xpos=#<_xpos> _ypos=#<_ypos> _curr_depth=#<_curr_depth>)
-    o107 ENDREPEAT
-
-    ; IF CURRENT DEPTH IS NOT YET TO PASS DEPTH
-    (M0 (DEBUG, O109 _curr_depth=#<_curr_depth> _depth=#<_depth>)
-    o109 IF [#<_curr_depth> GT #<_depth>]
-        (M0 (DEBUG, O109 _curr_depth=#<_curr_depth> _depth=#<_depth>)
-        o110 IF [#<_center> EQ 1]
-            G1 X[#<_xpos>] Y[#<_ypos>] F#<_feedrate>    (MOVE TO START POSITION)
-            X[#<_xpos> + 1] Z#<_depth> F#<_ramp_feed>            (FINAL RAMP TO DEPTH)
-            #<_xpos> = [#<_xpos> + 1]
-        o110 ELSE
-            G1 X0 Y0 F#<_feedrate>                          (RAMP POSITION)
-            X1 Z#<_depth> F#<_ramp_feed>                    (FINAL RAMP TO DEPTH)
-            #<_xpos> = 1
-        o110 ENDIF
-    o109 ENDIF 
-
-    #<_curr_depth> = #<_depth> 
-    F#<_feedrate>                (FEEDRATE 100% TO MILL PASS)
-o100 endsub
-
-; CALL SUB TO DO RAMPS
-o100 call
+; INITIAL POSITION
+; Move to safe height to start
+o120 call                    
 
 ; MILLING LOGIC BASED ON CENTER ORIGIN OR BOTTOM-LEFT ORIGIN
 ; CHECK IF USING CENTER ORIGIN
-M0 (DEBUG, START MILLING LOGIC _curr_depth=#<_curr_depth> TO _depth=#<_depth>)
 o201 IF [#<_center> EQ 1]
-    ; SET DEPTH LOOP
-    o202 WHILE [#<_curr_depth> GT #<_final_depth>]
-        M0 (DEBUG, SPIRAL MILLING AT DEPTH=#<_curr_depth>)
-        ; SPIRAL MILLING LOGIC
-        o203 WHILE [#<_curr_depth> GT #<_final_depth>]
-            ; SPIRAL LOGIC TO MOVE IN A CLOCKWISE PATTERN
-            X[#<_xpos>] Y[#<_ypos>] (MOVE TO NEXT POSITION IN SPIRAL)
-            #<_xpos> = [#<_xpos> - #<_stepover> * COS[45]]
-            #<_ypos> = [#<_ypos> - #<_stepover> * SIN[45]]
-            ; CHECK IF SPIRAL HAS REACHED THE CENTER
-            o204 IF [ABS[#<_xpos>] LT #<_stepover> AND ABS[#<_ypos>] LT #<_stepover>]
-                M0 (DEBUG, SPIRAL HAS REACHED THE CENTER)
-                #<_xpos> = 0
-                #<_ypos> = 0
-            o204 ENDIF
-        o203 ENDWHILE
-       #<_curr_depth> = [#<_curr_depth> + #<_ramp_depth>] ; MOVE DOWN BY RAMP DEPTH
-    o202 ENDWHILE
+    o160 call ;surface_center
 o201 ELSE
-    ; BOTTOM-LEFT ORIGIN MILLING LOGIC
-    o204 WHILE [#<_curr_depth> GT #<_final_depth>]
-        ; LOOP FOR EACH DEPTH
-        o205 WHILE [#<_curr_depth> GT #<_final_depth>]
-            ; SWEEP ACROSS X MOVING Y UP ON EACH PASS
-            G1 X[#<_x_width>] F#<_feedrate> (MOVE ACROSS X)
-            ; MOVE Y UP FOR THE NEXT PASS
-            G1 Y[#<_ypos> + #<_stepover>] F#<_feedrate>
-            ; MOVE BACK TO X0
-            G1 X0 F#<_feedrate>
-        o205 ENDWHILE
-        #<_curr_depth> = [#<_curr_depth> + #<_ramp_depth>] ; MOVE DOWN BY RAMP DEPTH
-        M0 (DEBUG, AFTER ADJUSTMENT: _curr_depth=#<_curr_depth>)
-    o204 ENDWHILE
+    o170 call ;surface_BL
 o201 ENDIF
 
-; SET CURRENT DEPTH AS NEW Z0 SO SCRIPT CAN BE REPEATED
-G92 Z0
-; SAFETY HEIGHT
-o307 IF [#<_useMM> EQ 1]
-    G1 Z6.25   
-o307 ELSE
-    G1 Z.125   
-o307 ENDIF
-; USE COORDINATE SYSTEM 1
-G54 G0 Z1
+; Final safe height and cleanup
+G92 Z0 (In csae you want to run again set Z=0 at current top of stock)
+; Move to safe height to start
+o120 call
+G0 X0 Y0
 M30
-% 
+%
