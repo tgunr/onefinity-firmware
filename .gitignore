@@ -28,4 +28,4 @@ __pycache__
 *.hex
 .idea/deployment.xml
 tools/
-.snapshots/
+raspberrypi-kernel
